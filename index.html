@@ -1,664 +1,417 @@
-# Create an updated single-file HTML app with a "Manual entry" mode.
-# Users can specify number of people & songs, upload avatars, set favorites, and enter scores.
-# We'll keep the existing CSV mode too, but default the UI to Manual.
-#
-# Output: /mnt/data/song_score_cards_manual.html
-
-from pathlib import Path
-
-html = r"""<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Song Score Cards — Manual Entry</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
-<link rel="preconnect" href="https://cdnjs.cloudflare.com">
-<style>
-:root{
-  --bg:#0b0e14; --fg:#e6e6e6; --muted:#a8b0bf; --card:#141820; --accent:#6ae38c; --border:#232838; --warn:#f6d365; --red:#f96a6a;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);}
-header{padding:28px 18px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#0c111c, #0b0e14);position:sticky;top:0;z-index:1}
-h1{margin:0 0 6px 0;font-size:22px;font-weight:700}
-p.lead{margin:0;color:var(--muted);font-size:14px}
-main{padding:18px;display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}
-.panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
-label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px}
-input[type=file], input[type=number], input[type=text], select, button, textarea{
-  width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0e1320;color:var(--fg)
-}
-button.primary{background:var(--accent);border-color:#59c778;color:#0c1618;font-weight:700}
-small.hint{display:block;color:var(--muted);margin-top:6px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.card{background:transparent;border:1px dashed var(--border);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px}
-.preview{background:transparent;display:grid;place-items:center;aspect-ratio:1/1;border-radius:12px;overflow:hidden}
-.meta{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
-.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);font-size:11px;color:var(--muted)}
-.row{display:flex;gap:8px;align-items:center}
-.tabs{display:flex; gap:8px; margin-bottom:10px}
-.tab{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#0e1320;cursor:pointer}
-.tab.active{background:var(--accent);color:#0b0e14;border-color:#59c778;font-weight:700}
-fieldset{border:1px solid var(--border);border-radius:12px;padding:12px;margin:10px 0}
-legend{color:var(--muted);font-size:12px;padding:0 6px}
-.person-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.person-row .avatar{grid-column: span 2}
-.song-row{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px;margin-bottom:8px}
-table.scores{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:12px}
-table.scores th,table.scores td{padding:8px;border:1px solid var(--border)}
-table.scores th{background:#0e1320}
-table.scores td{background:#0e1320}
-footer{padding:14px 18px;color:var(--muted);border-top:1px solid var(--border)}
-a{color:#82cfff}
-kbd{background:#20273a;border:1px solid #2a3250;border-bottom-color:#21304e;border-radius:6px;padding:1px 6px;font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:12px}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Song Scoring Dashboard</title>
+  <style>
+    :root{
+      --bg:#0b0b0c;          /* page background (not exported) */
+      --ink:#e8e8ea;         /* primary text */
+      --muted:#a7a7ab;       /* secondary text */
+      --accent:#7dd3fc;      /* ui highlights */
+      --card:#111114;        /* card background (can be toggled transparent on export) */
+      --ring:#2a2a31;        /* outlines */
+      --green:#16a34a;       /* highest */
+      --red:#dc2626;         /* lowest */
+      --yellow:#facc15;      /* submitter mark */
+    }
+    html,body{height:100%}
+    body{
+      margin:0; font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:var(--bg); color:var(--ink);
+      display:flex; flex-direction:column;
+    }
+    header{position:sticky; top:0; z-index:10; backdrop-filter:saturate(1.2) blur(6px); background:linear-gradient(180deg, #0b0b0ccc, #0b0b0c80 70%, transparent);}
+    .container{max-width:1100px; margin:0 auto; padding:20px;}
+    h1{font-size:clamp(22px, 2.6vw, 30px); margin:0 0 8px 0}
+    .toolbar{display:grid; gap:10px; grid-template-columns: repeat(12,1fr); align-items:end}
+    .toolbar .block{grid-column: span 3; min-width:0}
+    .toolbar .block.wide{grid-column: span 6}
+    label{display:block; font-size:12px; letter-spacing:.02em; color:var(--muted); margin:0 0 4px}
+    input, select, button, textarea{
+      background:#0f0f12; color:var(--ink); border:1px solid var(--ring); border-radius:10px; padding:10px 12px; width:100%; outline:none;
+    }
+    input[type="number"]{appearance:textfield}
+    input:focus, select:focus, textarea:focus{border-color:#3b82f6; box-shadow:0 0 0 2px #3b82f640}
+    button{cursor:pointer; border:1px solid #2b2b33; background:linear-gradient(180deg,#1b1b20,#121216); font-weight:600}
+    button.primary{border-color:#2563eb; background:linear-gradient(180deg,#2563eb,#1d4ed8); color:white}
+    button.ghost{background:transparent}
+    .row{display:flex; gap:10px}
+
+    /* Roster table */
+    .roster{margin-top:12px; display:grid; grid-template-columns: 1fr auto; gap:8px;}
+    .roster input{width:100%}
+
+    /* Song entry form */
+    .song-form{margin-top:18px; padding:16px; border:1px dashed var(--ring); border-radius:14px}
+    .song-grid{display:grid; gap:10px; grid-template-columns: repeat(12,1fr)}
+    .song-grid .span4{grid-column: span 4}
+    .song-grid .span12{grid-column: 1 / -1}
+
+    /* Cards */
+    .cards{display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:16px; margin-top:18px}
+    .card{position:relative; background:var(--card); border:1px solid var(--ring); border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:8px}
+    .card.compact{padding:12px; border-radius:14px}
+    .card.borderless{border-color:transparent; background:transparent}
+    .title{font-size:18px; font-weight:700}
+    .artist{font-size:14px; color:var(--muted); margin-top:-2px; border-bottom:1px dashed var(--ring); padding-bottom:8px}
+    .scores{display:grid; grid-template-columns: 1fr auto; row-gap:6px; column-gap:8px; align-items:center}
+    .badge{display:inline-flex; align-items:center; gap:6px}
+    .chip{font-size:11px; border-radius:999px; padding:2px 6px; border:1px solid var(--ring); color:var(--muted)}
+    .score{font-variant-numeric:tabular-nums; font-weight:700}
+    .score.high{color:var(--green)}
+    .score.low{color:var(--red)}
+    .markN{display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:4px; background:var(--yellow); color:#111; font-size:10px; font-weight:900}
+    .avg{margin-top:6px; font-weight:700}
+    .avg small{color:var(--muted); font-weight:500}
+    .card-actions{display:flex; gap:8px; margin-top:8px}
+
+    .empty{border:1px dashed var(--ring); border-radius:14px; padding:20px; color:var(--muted); text-align:center}
+
+    @media (max-width:840px){
+      .toolbar .block{grid-column: span 6}
+      .toolbar .block.wide{grid-column: 1 / -1}
+      .song-grid .span4{grid-column: span 6}
+    }
+  </style>
 </head>
 <body>
-<header>
-  <h1>🎵 Song Score Cards — Transparent PNG Exporter (Manual Entry)</h1>
-  <p class="lead">Add people, avatars & favorites, define songs, enter scores — then render per-song cards as transparent PNGs.</p>
-</header>
-<main>
-  <section class="panel">
-    <div class="tabs">
-      <div class="tab active" data-tab="manual">Manual</div>
-      <div class="tab" data-tab="csv">CSV</div>
-    </div>
-
-    <div id="manual-tab">
-      <label>How many people?</label>
-      <input id="num-people" type="number" min="1" max="30" value="5">
-
-      <div id="people-wrap"></div>
-
-      <label>How many songs?</label>
-      <input id="num-songs" type="number" min="1" max="200" value="5">
-
-      <div id="songs-wrap"></div>
-
-      <label>Scores</label>
-      <div id="scores-wrap"></div>
-    </div>
-
-    <div id="csv-tab" style="display:none">
-      <label>Scores CSV</label>
-      <input id="scores" type="file" accept=".csv" />
-      <small class="hint">Must include: <kbd>Submitter</kbd>, <kbd>Song</kbd>, <kbd>Artist</kbd>, per-person columns, optional <kbd>Average</kbd>.</small>
-
-      <label>People CSV (optional)</label>
-      <input id="people-csv" type="file" accept=".csv" />
-      <small class="hint">Columns: <kbd>Name</kbd>, <kbd>AvatarFileName</kbd></small>
-
-      <label>Avatars ZIP (optional)</label>
-      <input id="avatars" type="file" accept=".zip" />
-    </div>
-
-    <label>Canvas size (px)</label>
-    <div class="row">
-      <input id="width" type="number" value="1024" min="512" max="2048" step="32" style="width:50%">
-      <input id="height" type="number" value="1024" min="512" max="2048" step="32" style="width:50%">
-    </div>
-
-    <label>Options</label>
-    <div class="row" style="flex-wrap:wrap">
-      <span class="badge"><input id="show-avg" type="checkbox" checked> show average</span>
-      <span class="badge"><input id="show-table" type="checkbox" checked> show score table</span>
-      <span class="badge"><input id="submitter-mark" type="checkbox" checked> highlight submitter</span>
-      <span class="badge"><input id="favorite-star" type="checkbox" checked> subtle star for favorites</span>
-    </div>
-
-    <div style="height:8px"></div>
-    <button class="primary" id="generate">Generate cards</button>
-    <div style="height:8px"></div>
-    <button id="download-zip" disabled>⬇️ Download all (ZIP)</button>
-    <small class="hint">Tip: right-click a preview to “Save image as…”</small>
-  </section>
-
-  <section class="panel">
-    <div class="meta">
-      <div><span class="badge">Status: <span id="status">Idle</span></span></div>
-      <div><span class="badge"><kbd>PNG</kbd> transparent</span></div>
-    </div>
-    <div class="grid" id="grid"></div>
-  </section>
-</main>
-
-<footer>
-  Fully client-side. Manual mode supports avatars, favorites, and scores without any CSVs.
-</footer>
-
-<!-- Libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-<script>
-const $ = (sel) => document.querySelector(sel);
-const grid = $("#grid");
-const statusEl = $("#status");
-const btnGen = $("#generate");
-const btnZip = $("#download-zip");
-
-/* ---------- Tabs ---------- */
-document.querySelectorAll(".tab").forEach(t => {
-  t.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
-    t.classList.add("active");
-    const tab = t.dataset.tab;
-    $("#manual-tab").style.display = tab==="manual" ? "" : "none";
-    $("#csv-tab").style.display = tab==="csv" ? "" : "none";
-  });
-});
-
-/* ---------- Manual builders ---------- */
-const peopleWrap = $("#people-wrap");
-const songsWrap = $("#songs-wrap");
-const scoresWrap = $("#scores-wrap");
-
-$("#num-people").addEventListener("input", rebuildPeople);
-$("#num-songs").addEventListener("input", rebuildSongs);
-
-function rebuildPeople(){
-  const n = Math.max(1, Math.min(30, parseInt($("#num-people").value||"0",10)));
-  peopleWrap.innerHTML = "";
-  for(let i=0;i<n;i++){
-    const fs = document.createElement("fieldset");
-    fs.innerHTML = `
-      <legend>Person ${i+1}</legend>
-      <div class="person-row">
-        <div><label>Name</label><input type="text" class="p-name" placeholder="e.g., Nick"></div>
-        <div><label>Favorite song</label><select class="p-fav"></select></div>
-        <div class="avatar"><label>Avatar image</label><input type="file" class="p-avatar" accept="image/*"></div>
+  <header>
+    <div class="container">
+      <h1>🎵 Song Scoring Dashboard</h1>
+      <div class="toolbar" role="region" aria-label="Controls">
+        <div class="block">
+          <label for="peopleCount">Number of people</label>
+          <input id="peopleCount" type="number" min="1" value="5" />
+        </div>
+        <div class="block wide">
+          <label>People (names)</label>
+          <div id="roster" class="roster" aria-live="polite"></div>
+        </div>
+        <div class="block">
+          <label for="layoutStyle">Layout</label>
+          <select id="layoutStyle">
+            <option value="standard">Standard</option>
+            <option value="compact">Compact</option>
+            <option value="borderless">Borderless / Transparent</option>
+          </select>
+        </div>
+        <div class="block">
+          <label for="sortBy">Sort by</label>
+          <select id="sortBy">
+            <option value="avg_desc">Average (High → Low)</option>
+            <option value="avg_asc">Average (Low → High)</option>
+            <option value="title_asc">Title (A → Z)</option>
+            <option value="artist_asc">Artist (A → Z)</option>
+          </select>
+        </div>
+        <div class="block">
+          <label>&nbsp;</label>
+          <button id="exportAll" title="Export all cards as transparent PNGs">Export All PNGs</button>
+        </div>
       </div>
-    `;
-    peopleWrap.appendChild(fs);
-  }
-  refreshFavoriteOptions();
-  rebuildScoresTable();
-}
-function rebuildSongs(){
-  const n = Math.max(1, Math.min(200, parseInt($("#num-songs").value||"0",10)));
-  songsWrap.innerHTML = "";
-  for(let i=0;i<n;i++){
-    const fs = document.createElement("fieldset");
-    fs.innerHTML = `
-      <legend>Song ${i+1}</legend>
-      <div class="song-row">
-        <div><label>Title</label><input type="text" class="s-title" placeholder="Song title"></div>
-        <div><label>Artist</label><input type="text" class="s-artist" placeholder="Artist"></div>
-        <div><label>Submitter</label><select class="s-submit"></select></div>
-      </div>
-    `;
-    songsWrap.appendChild(fs);
-  }
-  refreshSubmitterOptions();
-  rebuildScoresTable();
-}
-function refreshFavoriteOptions(){
-  const titles = getSongTitles();
-  peopleWrap.querySelectorAll(".p-fav").forEach(sel => {
-    const current = sel.value;
-    sel.innerHTML = `<option value="">(none)</option>` + titles.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
-    sel.value = current && titles.includes(current) ? current : "";
-  });
-}
-function refreshSubmitterOptions(){
-  const names = getPeopleNames();
-  songsWrap.querySelectorAll(".s-submit").forEach(sel => {
-    const current = sel.value;
-    sel.innerHTML = `<option value="">(none)</option>` + names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
-    sel.value = current && names.includes(current) ? current : "";
-  });
-}
-function getPeopleNames(){
-  return Array.from(peopleWrap.querySelectorAll(".p-name")).map(i => i.value.trim()).filter(Boolean);
-}
-function getSongTitles(){
-  return Array.from(songsWrap.querySelectorAll(".s-title")).map(i => i.value.trim()).filter(Boolean);
-}
 
-/* Scores table builder */
-function rebuildScoresTable(){
-  const names = getPeopleNames();
-  const titles = getSongTitles();
-  scoresWrap.innerHTML = "";
-  if(names.length===0 || titles.length===0){
-    scoresWrap.innerHTML = `<small class="hint">Add at least one person and one song to edit scores.</small>`;
-    return;
-  }
-  const table = document.createElement("table");
-  table.className = "scores";
-  const thead = document.createElement("thead");
-  const trh = document.createElement("tr");
-  trh.innerHTML = `<th>Song</th>` + names.map(n => `<th>${escapeHtml(n)}</th>`).join("");
-  thead.appendChild(trh);
-  table.appendChild(thead);
-  const tbody = document.createElement("tbody");
-  titles.forEach((title, rowIdx) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${escapeHtml(title)}</td>` + names.map((n, colIdx) => {
-      return `<td><input type="number" class="score" data-song="${rowIdx}" data-name="${escapeAttr(n)}" min="0" max="10" step="0.1" placeholder="-"></td>`;
-    }).join("");
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-  scoresWrap.appendChild(table);
-}
+      <form id="songForm" class="song-form" autocomplete="off">
+        <div class="song-grid">
+          <div class="span4">
+            <label for="title">Song title</label>
+            <input id="title" required placeholder="e.g., Dreams" />
+          </div>
+          <div class="span4">
+            <label for="artist">Artist</label>
+            <input id="artist" required placeholder="e.g., Fleetwood Mac" />
+          </div>
+          <div class="span4">
+            <label for="submitter">Submitter</label>
+            <input id="submitter" required placeholder="Pick from roster or type" list="rosterList" />
+            <datalist id="rosterList"></datalist>
+          </div>
+          <div class="span12">
+            <label>Scores (per person)</label>
+            <div id="scoreInputs" class="row" style="flex-wrap:wrap"></div>
+          </div>
+          <div class="span4">
+            <label for="avgOverride">Average (optional — you can paste yours)</label>
+            <input id="avgOverride" type="number" step="0.01" placeholder="Leave blank to auto-calc" />
+          </div>
+          <div class="span4">
+            <label>&nbsp;</label>
+            <button class="primary" type="submit">Add song</button>
+          </div>
+          <div class="span4">
+            <label>&nbsp;</label>
+            <button type="button" id="clearForm" class="ghost">Clear</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </header>
 
-/* Keep options in sync on input */
-peopleWrap.addEventListener("input", (e)=>{
-  if(e.target.classList.contains("p-name")){
-    refreshSubmitterOptions();
-    rebuildScoresTable();
-  }
-});
-songsWrap.addEventListener("input", (e)=>{
-  if(e.target.classList.contains("s-title")){
-    refreshFavoriteOptions();
-    rebuildScoresTable();
-  }
-});
+  <main class="container" style="padding-top:6px; padding-bottom:40px">
+    <section id="cards" class="cards" aria-live="polite">
+      <div class="empty" id="emptyState">No songs yet — add one above ✨</div>
+    </section>
+  </main>
 
-/* Helper: escape */
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function escapeAttr(s){ return String(s).replace(/"/g,'&quot;'); }
+  <!-- html2canvas for export -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    const peopleCountEl = document.getElementById('peopleCount');
+    const rosterEl = document.getElementById('roster');
+    const datalistEl = document.getElementById('rosterList');
+    const scoreInputsEl = document.getElementById('scoreInputs');
+    const songForm = document.getElementById('songForm');
+    const cardsEl = document.getElementById('cards');
+    const layoutStyleEl = document.getElementById('layoutStyle');
+    const sortByEl = document.getElementById('sortBy');
+    const exportAllBtn = document.getElementById('exportAll');
 
-/* ---------- CSV mode (optional) ---------- */
-let avatarZip = null;
-let avatarMap = {}; // filename -> Blob URL
-let peopleMap = {}; // name -> avatar filename
+    let roster = ['Alice','Bob','Charlie','Dana','Eli'];
+    let songs = []; // {id,title,artist,submitter,scores:{name:value}, avg}
 
-$("#avatars")?.addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if(!file){ avatarZip=null; avatarMap={}; return; }
-  status("Reading avatars ZIP…");
-  const data = await file.arrayBuffer();
-  const zip = await JSZip.loadAsync(data);
-  avatarZip = zip;
-  avatarMap = {};
-  const entries = Object.values(zip.files);
-  for(const f of entries){
-    if(f.dir) continue;
-    const blob = await f.async("blob");
-    avatarMap[f.name.split('/').pop()] = URL.createObjectURL(blob);
-  }
-  status(`Loaded ${Object.keys(avatarMap).length} avatar images.`);
-});
+    /** Utilities */
+    const uid = () => Math.random().toString(36).slice(2,9);
+    const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+    const sanitizeFilename = (s) => s.replace(/[\/:*?"<>|]/g,'_').slice(0,80);
 
-$("#people-csv")?.addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if(!file){ peopleMap={}; return; }
-  status("Parsing people CSV…");
-  const text = await file.text();
-  const res = Papa.parse(text, {header:true, skipEmptyLines:true});
-  peopleMap = {};
-  for(const row of res.data){
-    if(row.Name && row.AvatarFileName){
-      peopleMap[row.Name.trim()] = row.AvatarFileName.trim();
+    function renderRosterInputs(){
+      rosterEl.innerHTML = '';
+      datalistEl.innerHTML = '';
+      roster.forEach((name, i)=>{
+        const nameInput = document.createElement('input');
+        nameInput.value = name;
+        nameInput.placeholder = `Person ${i+1}`;
+        nameInput.addEventListener('change', ()=>{
+          roster[i] = nameInput.value.trim();
+          rebuildScoreInputs();
+          fillDatalist();
+          refreshAllCards();
+        });
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = '✕';
+        removeBtn.type = 'button';
+        removeBtn.style.width='42px';
+        removeBtn.addEventListener('click', ()=>{
+          roster.splice(i,1);
+          peopleCountEl.value = roster.length;
+          renderRosterInputs();
+          rebuildScoreInputs();
+          fillDatalist();
+          refreshAllCards();
+        });
+        rosterEl.appendChild(nameInput);
+        rosterEl.appendChild(removeBtn);
+
+        const opt = document.createElement('option');
+        opt.value = name; datalistEl.appendChild(opt);
+      });
     }
-  }
-  status(`Loaded ${Object.keys(peopleMap).length} people.`);
-});
 
-/* ---------- Generation ---------- */
-function status(msg){ statusEl.textContent = msg; }
-
-btnGen.addEventListener("click", async () => {
-  const mode = document.querySelector(".tab.active").dataset.tab;
-  const width = parseInt($("#width").value,10)||1024;
-  const height = parseInt($("#height").value,10)||1024;
-  const showAvg = $("#show-avg").checked;
-  const showTable = $("#show-table").checked;
-  const markSubmitter = $("#submitter-mark").checked;
-  const favStar = $("#favorite-star").checked;
-
-  grid.innerHTML = "";
-
-  let rows = [];
-  let peopleList = [];
-  let avatarUrlFor = (name)=>null;
-  let favorites = {};
-
-  if(mode==="manual"){
-    // Build from manual inputs
-    peopleList = [];
-    const peopleFS = peopleWrap.querySelectorAll("fieldset");
-    // Gather people names, avatars, favorites
-    for(const fs of peopleFS){
-      const name = fs.querySelector(".p-name").value.trim();
-      if(!name) continue;
-      peopleList.push(name);
+    function fillDatalist(){
+      datalistEl.innerHTML = '';
+      roster.forEach(n=>{ const o=document.createElement('option'); o.value=n; datalistEl.appendChild(o);});
     }
-    // map name -> avatar URL
-    const avatarMapManual = {};
-    for(const fs of peopleFS){
-      const name = fs.querySelector(".p-name").value.trim();
-      const fav = fs.querySelector(".p-fav").value.trim();
-      const file = fs.querySelector(".p-avatar").files[0];
-      if(name){
-        favorites[name] = fav || "";
-        if(file){
-          avatarMapManual[name] = URL.createObjectURL(file);
-        }
-      }
+
+    function rebuildScoreInputs(){
+      scoreInputsEl.innerHTML = '';
+      roster.forEach((name, idx)=>{
+        const wrap = document.createElement('div');
+        wrap.style.minWidth='160px'; wrap.style.flex='1 1 160px';
+        const lab = document.createElement('label'); lab.textContent = name || `Person ${idx+1}`; lab.style.display='block'; lab.style.color='var(--muted)'; lab.style.fontSize='12px'; lab.style.marginBottom='4px';
+        const inp = document.createElement('input');
+        inp.type='number'; inp.step='0.01'; inp.placeholder='score';
+        inp.dataset.person = name || `Person ${idx+1}`;
+        wrap.appendChild(lab); wrap.appendChild(inp);
+        scoreInputsEl.appendChild(wrap);
+      });
     }
-    avatarUrlFor = (name)=> avatarMapManual[name] || null;
 
-    // Build song rows
-    const songFS = songsWrap.querySelectorAll("fieldset");
-    const titles = Array.from(songFS).map(fs => fs.querySelector(".s-title").value.trim());
-    const artists = Array.from(songFS).map(fs => fs.querySelector(".s-artist").value.trim());
-    const submitters = Array.from(songFS).map(fs => fs.querySelector(".s-submit").value.trim());
-
-    // Build scores from table
-    const scoreInputs = scoresWrap.querySelectorAll("input.score");
-    const scoreMap = {}; // key: songIdx|name -> value
-    scoreInputs.forEach(inp => {
-      const k = `${inp.dataset.song}|${inp.dataset.name}`;
-      const v = inp.value.trim();
-      scoreMap[k] = v==="" ? null : Number(v);
+    peopleCountEl.addEventListener('change', ()=>{
+      const n = clamp(parseInt(peopleCountEl.value||'0',10),1,50);
+      const diff = n - roster.length;
+      if(diff>0){ for(let i=0;i<diff;i++){ roster.push(`Person ${roster.length+1}`);} }
+      if(diff<0){ roster.splice(n); }
+      renderRosterInputs();
+      rebuildScoreInputs();
+      fillDatalist();
+      refreshAllCards();
     });
 
-    for(let i=0;i<titles.length;i++){
-      if(!titles[i]) continue;
-      const row = {
-        Submitter: submitters[i] || "",
-        Song: titles[i],
-        Artist: artists[i] || ""
-      };
-      // per-person scores
-      for(const n of peopleList){
-        const key = `${i}|${n}`;
-        row[n] = scoreMap[key];
-      }
+    function computeAverage(scores){
+      const vals = Object.values(scores).map(v=> typeof v==="number"? v : parseFloat(v)).filter(v=>!Number.isNaN(v));
+      if(!vals.length) return 0;
+      return vals.reduce((a,b)=>a+b,0)/vals.length;
+    }
+
+    function addSong(data){
+      songs.push(data); rerenderCards();
+    }
+
+    function getExtrema(scores){
+      const entries = Object.entries(scores).filter(([,v])=>v!=='' && v!=null && !Number.isNaN(parseFloat(v)));
+      if(entries.length===0) return {maxNames:new Set(), minNames:new Set()};
+      const nums = entries.map(([n,v])=>[n, parseFloat(v)]);
+      const maxVal = Math.max(...nums.map(([,v])=>v));
+      const minVal = Math.min(...nums.map(([,v])=>v));
+      const maxNames = new Set(nums.filter(([,v])=>v===maxVal).map(([n])=>n));
+      const minNames = new Set(nums.filter(([,v])=>v===minVal).map(([n])=>n));
+      return {maxNames, minNames};
+    }
+
+    function clearEmptyState(){
+      const es = document.getElementById('emptyState'); if(es) es.remove();
+    }
+
+    function songSortFn(a,b){
+      const sel = sortByEl.value;
+      if(sel==='avg_desc') return (b.avg)-(a.avg);
+      if(sel==='avg_asc') return (a.avg)-(b.avg);
+      if(sel==='title_asc') return a.title.localeCompare(b.title, undefined, {sensitivity:'base'});
+      if(sel==='artist_asc') return a.artist.localeCompare(b.artist, undefined, {sensitivity:'base'});
+      return (b.avg)-(a.avg);
+    }
+
+    function rerenderCards(){
+      cardsEl.innerHTML = '';
+      clearEmptyState();
+      songs.sort(songSortFn);
+      songs.forEach(song=> cardsEl.appendChild(renderCard(song)));
+    }
+
+    function refreshAllCards(){
+      document.querySelectorAll('.card').forEach(card=>{
+        const id = card.dataset.id;
+        const song = songs.find(s=>s.id===id);
+        if(song){
+          card.replaceWith(renderCard(song));
+        }
+      });
+    }
+
+    function renderCard(song){
+      const {maxNames, minNames} = getExtrema(song.scores);
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.dataset.id = song.id;
+
+      // Apply layout
+      const style = layoutStyleEl.value;
+      card.classList.toggle('compact', style==='compact');
+      card.classList.toggle('borderless', style==='borderless');
+
+      // Header
+      const title = document.createElement('div'); title.className='title'; title.textContent = song.title;
+      const artist = document.createElement('div'); artist.className='artist'; artist.textContent = song.artist;
+      card.appendChild(title); card.appendChild(artist);
+
+      // Scores grid
+      const scoresWrap = document.createElement('div'); scoresWrap.className='scores';
+      roster.forEach(person=>{
+        const rowL = document.createElement('div');
+        const badge = document.createElement('span'); badge.className='badge';
+        const chip = document.createElement('span'); chip.className='chip'; chip.textContent = person;
+        badge.appendChild(chip);
+        // submitter mark — if rater matches submitter OR their name ends with '/'
+        const isSubmitter = (person && song.submitter && person.trim().toLowerCase()===song.submitter.trim().toLowerCase()) || /\/$/.test(person || '');
+        if(isSubmitter){ const n=document.createElement('span'); n.className='markN'; n.title='Submitter'; n.textContent='N'; badge.appendChild(n); }
+        rowL.appendChild(badge);
+
+        const val = song.scores[person];
+        const rowR = document.createElement('div');
+        const sv = document.createElement('span'); sv.className='score'; sv.textContent = (val===undefined||val==='')? '—' : String(val);
+        if(maxNames.has(person)) sv.classList.add('high');
+        if(minNames.has(person)) sv.classList.add('low');
+        rowR.appendChild(sv);
+
+        scoresWrap.appendChild(rowL);
+        scoresWrap.appendChild(rowR);
+      });
+      card.appendChild(scoresWrap);
+
       // Average
-      const vals = peopleList.map(n => row[n]).filter(v => typeof v === "number" && !Number.isNaN(v));
-      row.Average = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length) : null;
-      rows.push(row);
-    }
-  } else {
-    // CSV mode (same as earlier build)
-    const scoresFile = $("#scores").files[0];
-    if(!scoresFile){ alert("Choose a scores CSV or switch to Manual."); return; }
-    status("Parsing scores CSV…");
-    const text = await scoresFile.text();
-    const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
-    rows = parsed.data;
-    const exclude = new Set(["Submitter","Song","Artist","Average"]);
-    peopleList = Object.keys(rows[0]).filter(k => !exclude.has(k));
+      const avg = document.createElement('div'); avg.className='avg';
+      avg.innerHTML = `<small>Average</small> ${Number.isFinite(song.avg)? song.avg.toFixed(2) : '—'}`;
+      card.appendChild(avg);
 
-    // avatar from ZIP + people CSV map
-    avatarUrlFor = (name)=>{
-      const fname = peopleMap[name];
-      if(fname && avatarMap[fname]) return avatarMap[fname];
-      return null;
-    };
-  }
+      // Actions
+      const actions = document.createElement('div'); actions.className='card-actions';
+      const dl = document.createElement('button'); dl.textContent = 'Export PNG'; dl.type='button';
+      dl.addEventListener('click', ()=> downloadCardPNG(card, `${sanitizeFilename(song.title)}.png`));
+      const del = document.createElement('button'); del.textContent = 'Delete'; del.type='button';
+      del.addEventListener('click', ()=>{ songs = songs.filter(s=>s.id!==song.id); rerenderCards(); if(!songs.length){ showEmpty(); } });
+      actions.appendChild(dl); actions.appendChild(del);
+      card.appendChild(actions);
 
-  status("Rendering cards…");
-  const images = [];
-
-  for(const row of rows){
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0,0,width,height);
-
-    // layout
-    const pad = Math.round(width*0.05);
-    const innerW = width - pad*2;
-    const titleY = pad + 10;
-
-    // Title
-    ctx.font = `700 ${Math.round(width*0.05)}px ui-sans-serif, system-ui, -apple-system`;
-    ctx.fillStyle = "#e6e6e6";
-    ctx.textBaseline = "top";
-    wrapText(ctx, `${row.Song||""}`, pad, titleY, innerW, Math.round(width*0.06));
-
-    // Artist
-    ctx.font = `600 ${Math.round(width*0.028)}px ui-sans-serif, system-ui, -apple-system`;
-    ctx.fillStyle = "#a8b0bf";
-    const artistY = titleY + Math.round(width*0.14);
-    ctx.fillText(`${row.Artist||""}`, pad, artistY);
-
-    // Average badge
-    if(showAvg && row.Average!=null && row.Average!==""){
-      drawBadge(ctx, width-pad-10, artistY, `Avg ${Number(row.Average).toFixed(2)}`, {align:"right"});
+      return card;
     }
 
-    // Submitter
-    if(markSubmitter && row.Submitter){
-      drawBadge(ctx, pad, artistY, `Submitter: ${row.Submitter}`, {align:"left", fill:"#0e1320", stroke:"#3b405a", text:"#f6d365"});
+    function showEmpty(){
+      const div = document.createElement('div'); div.className='empty'; div.id='emptyState'; div.textContent='No songs yet — add one above ✨';
+      cardsEl.appendChild(div);
     }
 
-    // Favorite star (subtle) behind favorite person’s score
-    // We'll draw a tiny star next to the person's name in the table.
-    const favMap = favorites || {};
+    // Export helpers
+    async function downloadCardPNG(cardEl, filename){
+      // Temporarily force transparent background if borderless
+      const originalBG = cardEl.style.backgroundColor;
+      const originalBorder = cardEl.style.borderColor;
+      // Ensure visual parity on export but with transparent background
+      cardEl.style.backgroundColor = 'transparent';
+      cardEl.style.borderColor = 'transparent';
 
-    // Submitter avatar (optional)
-    const submitter = (row.Submitter||"").trim();
-    const submitterAvatar = avatarUrlFor(submitter);
-    if(submitterAvatar){
-      await drawAvatarCircle(ctx, submitterAvatar, width-pad-80, pad+10, Math.round(width*0.05));
+      const canvas = await html2canvas(cardEl, {backgroundColor:null, scale:2});
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+
+      cardEl.style.backgroundColor = originalBG; cardEl.style.borderColor = originalBorder;
     }
 
-    // Scores table
-    if(showTable){
-      const tableY = artistY + Math.round(width*0.06);
-      drawScoresTable(ctx, row, peopleList, pad, tableY, innerW, Math.round(width*0.03), favMap, favStar);
-    }
+    exportAllBtn.addEventListener('click', async()=>{
+      const cards = [...document.querySelectorAll('.card')];
+      for(const c of cards){
+        const title = c.querySelector('.title')?.textContent?.trim() || 'song';
+        await downloadCardPNG(c, `${sanitizeFilename(title)}.png`);
+      }
+    });
 
-    const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
-    const songSlug = slugify(row.Song||"song");
-    const name = `${songSlug}.png`;
-    images.push({name, blob});
+    layoutStyleEl.addEventListener('change', ()=>{
+      document.querySelectorAll('.card').forEach(c=>{
+        c.classList.toggle('compact', layoutStyleEl.value==='compact');
+        c.classList.toggle('borderless', layoutStyleEl.value==='borderless');
+      });
+    });
 
-    const url = URL.createObjectURL(blob);
-    const card = document.createElement("div");
-    card.className = "card";
-    const prev = document.createElement("div");
-    prev.className = "preview";
-    const img = document.createElement("img");
-    img.src = url;
-    img.alt = row.Song || "card";
-    prev.appendChild(img);
-    const meta = document.createElement("div");
-    meta.className = "meta";
-    meta.innerHTML = `<span>${(row.Song||"(untitled)")} — ${row.Artist||""}</span><span>${row.Submitter||""}</span>`;
-    const dl = document.createElement("button");
-    dl.textContent = "⬇️ Download PNG";
-    dl.addEventListener("click", () => saveAs(blob, name));
-    card.appendChild(prev);
-    card.appendChild(meta);
-    card.appendChild(dl);
-    grid.appendChild(card);
-  }
+    sortByEl.addEventListener('change', rerenderCards);
 
-  // Enable ZIP download
-  btnZip.disabled = false;
-  btnZip.onclick = async () => {
-    status("Packaging ZIP…");
-    const zip = new JSZip();
-    for(const it of images){
-      zip.file(it.name, it.blob);
-    }
-    const zblob = await zip.generateAsync({type:"blob"});
-    saveAs(zblob, "song_cards.zip");
-    status("Ready");
-  };
+    // Form submit
+    songForm.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const title = document.getElementById('title').value.trim();
+      const artist = document.getElementById('artist').value.trim();
+      const submitter = document.getElementById('submitter').value.trim();
+      const avgOverride = parseFloat(document.getElementById('avgOverride').value);
 
-  status(`Generated ${images.length} cards.`);
-});
+      const scores = {};
+      [...scoreInputsEl.querySelectorAll('input')].forEach(inp=>{
+        const who = inp.dataset.person; const val = inp.value.trim();
+        if(val!=='' && !Number.isNaN(parseFloat(val))) scores[who] = parseFloat(val);
+      });
 
-/* ---------- Drawing helpers ---------- */
-function slugify(s){
-  return String(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
-}
+      const avg = Number.isFinite(avgOverride) ? avgOverride : computeAverage(scores);
 
-async function drawAvatarCircle(ctx, src, x, y, r){
-  return new Promise(res => {
-    const img = new Image();
-    img.onload = () => {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI*2);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(img, x-r, y-r, r*2, r*2);
-      ctx.restore();
-      res();
-    };
-    img.src = src;
-  });
-}
+      addSong({ id: uid(), title, artist, submitter, scores, avg });
+      songForm.reset(); rebuildScoreInputs();
+    });
 
-function drawBadge(ctx, x, y, text, opts={}){
-  const padX = 12, padY = 8;
-  ctx.font = `700 ${Math.round(ctx.canvas.width*0.022)}px ui-sans-serif, system-ui, -apple-system`;
-  const m = ctx.measureText(text);
-  const w = m.width + padX*2;
-  const h = Math.round(ctx.canvas.width*0.04);
-  const bx = opts.align==="right"? x - w : x;
-  const by = y;
-  const fill = opts.fill || "#141820aa";
-  const stroke = opts.stroke || "#3b405a88";
-  const textCol = opts.text || "#e6e6e6";
-  roundRect(ctx, bx, by, w, h, 12, fill, stroke);
-  ctx.fillStyle = textCol;
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, bx+padX, by + h/2);
-}
+    document.getElementById('clearForm').addEventListener('click', ()=>{
+      songForm.reset(); rebuildScoreInputs();
+    });
 
-function roundRect(ctx, x, y, w, h, r, fill, stroke){
-  ctx.beginPath();
-  ctx.moveTo(x+r, y);
-  ctx.arcTo(x+w, y, x+w, y+h, r);
-  ctx.arcTo(x+w, y+h, x, y+h, r);
-  ctx.arcTo(x, y+h, x, y, r);
-  ctx.arcTo(x, y, x+w, y, r);
-  ctx.closePath();
-  ctx.fillStyle = fill;
-  ctx.fill();
-  if(stroke){
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  }
-}
-
-function wrapText(ctx, text, x, y, maxWidth, lineHeight){
-  const words = String(text).split(/\s+/);
-  let line = "", yy = y;
-  for(let i=0;i<words.length;i++){
-    const test = line? line + " " + words[i] : words[i];
-    const w = ctx.measureText(test).width;
-    if(w > maxWidth && i>0){
-      ctx.fillText(line, x, yy);
-      line = words[i];
-      yy += lineHeight;
-    }else{
-      line = test;
-    }
-  }
-  if(line) ctx.fillText(line, x, yy);
-}
-
-function drawScoresTable(ctx, row, peopleList, x, y, w, fontSize, favorites, favStar){
-  const vals = [];
-  for(const name of peopleList){
-    const v = Number(row[name]);
-    if(!Number.isNaN(v)) vals.push(v);
-  }
-  const min = Math.min(...vals), max = Math.max(...vals);
-  const rH = fontSize * 1.8;
-
-  ctx.font = `600 ${fontSize}px ui-sans-serif, system-ui, -apple-system`;
-  ctx.textBaseline = "middle";
-
-  // Panel
-  roundRect(ctx, x-6, y-6, w+12, rH*(peopleList.length)+12, 16, "#0e1320aa", "#2a325088");
-
-  let yy = y + rH/2;
-  for(const name of peopleList){
-    const val = Number(row[name]);
-
-    // Favorite star
-    if(favStar && favorites && favorites[name] && favorites[name] === row.Song){
-      drawStar(ctx, x + 4, yy, Math.round(fontSize*0.7), "rgba(255, 215, 0, 0.25)");
-    }
-
-    // name
-    ctx.fillStyle = "#cbd5e1";
-    ctx.fillText(name, x + 24, yy);
-
-    // submitter highlight
-    if($("#submitter-mark").checked && String(row.Submitter||"").trim() === name.trim()){
-      ctx.fillStyle = "rgba(246, 211, 101, 0.20)";
-      ctx.fillRect(x+2, yy-rH/2+2, w-4, rH-4);
-    }
-
-    // score chip
-    if(!Number.isNaN(val)){
-      const t = (val - min) / (max - min || 1);
-      const col = lerpColor([249,106,106],[106,227,140], t);
-      const chipW = 64, chipH = Math.round(fontSize*1.4);
-      roundRect(ctx, x + w - chipW - 8, yy - chipH/2, chipW, chipH, 10, `rgb(${col.join(",")})`, "#00000022");
-      ctx.fillStyle = "#0b0e14";
-      ctx.font = `800 ${fontSize}px ui-sans-serif, system-ui, -apple-system`;
-      const valText = String(val);
-      const mw = ctx.measureText(valText).width;
-      ctx.fillText(valText, x + w - chipW - 8 + (chipW-mw)/2, yy);
-    }
-
-    yy += rH;
-  }
-}
-
-function drawStar(ctx, cx, cy, r, fill){
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.beginPath();
-  const spikes = 5;
-  const outer = r;
-  const inner = r*0.5;
-  let rot = Math.PI/2 * 3;
-  let x = 0;
-  let y = 0;
-  ctx.moveTo(0, -outer);
-  for(let i=0; i<spikes; i++){
-    x = Math.cos(rot) * outer;
-    y = Math.sin(rot) * outer;
-    ctx.lineTo(x, y);
-    rot += Math.PI / 5;
-
-    x = Math.cos(rot) * inner;
-    y = Math.sin(rot) * inner;
-    ctx.lineTo(x, y);
-    rot += Math.PI / 5;
-  }
-  ctx.lineTo(0, -outer);
-  ctx.closePath();
-  ctx.fillStyle = fill;
-  ctx.fill();
-  ctx.restore();
-}
-
-function lerpColor(a,b,t){
-  const out = [0,0,0];
-  for(let i=0;i<3;i++){
-    out[i] = Math.round(a[i] + (b[i]-a[i]) * (t<0?0:(t>1?1:t)));
-  }
-  return out;
-}
-
-/* ---------- Init ---------- */
-rebuildPeople();
-rebuildSongs();
-</script>
+    // init
+    renderRosterInputs();
+    rebuildScoreInputs();
+    fillDatalist();
+  </script>
 </body>
 </html>
-"""
-Path("/mnt/data/song_score_cards_manual.html").write_text(html, encoding="utf-8")
-print("Wrote /mnt/data/song_score_cards_manual.html")
