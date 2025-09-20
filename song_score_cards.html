@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Song Score Cards — HTML Exporter</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<style>
+:root{
+  --bg:#0b0e14; --fg:#e6e6e6; --muted:#a8b0bf; --card:#141820; --accent:#6ae38c; --border:#232838; --warn:#f6d365;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);}
+header{padding:28px 18px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#0c111c, #0b0e14);position:sticky;top:0;z-index:1}
+h1{margin:0 0 6px 0;font-size:22px;font-weight:700}
+p.lead{margin:0;color:var(--muted);font-size:14px}
+main{padding:18px;display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px}
+input[type=file], select, button{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0e1320;color:var(--fg)}
+button.primary{background:var(--accent);border-color:#59c778;color:#0c1618;font-weight:700}
+small.hint{display:block;color:var(--muted);margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{background:transparent;border:1px dashed var(--border);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.preview{background:transparent;display:grid;place-items:center;aspect-ratio:1/1;border-radius:12px;overflow:hidden}
+.meta{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);font-size:11px;color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center}
+footer{padding:14px 18px;color:var(--muted);border-top:1px solid var(--border)}
+a{color:#82cfff}
+kbd{background:#20273a;border:1px solid #2a3250;border-bottom-color:#21304e;border-radius:6px;padding:1px 6px;font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎵 Song Score Cards — Transparent PNG Exporter (HTML)</h1>
+  <p class="lead">Upload your scores CSV (and optional avatars ZIP + people CSV). We’ll render each song as a transparent PNG. Highest score → <strong style="color:#6ae38c">green</strong>, lowest → <strong style="color:#f96a6a">red</strong>. Submitter is highlighted.</p>
+</header>
+<main>
+  <section class="panel">
+    <label>Scores CSV</label>
+    <input id="scores" type="file" accept=".csv" />
+    <small class="hint">Must include columns: <kbd>Submitter</kbd>, <kbd>Song</kbd>, <kbd>Artist</kbd>, per-person score columns, and optionally <kbd>Average</kbd>.</small>
+
+    <label>People CSV (optional)</label>
+    <input id="people" type="file" accept=".csv" />
+    <small class="hint">Columns: <kbd>Name</kbd>, <kbd>AvatarFileName</kbd></small>
+
+    <label>Avatars ZIP (optional)</label>
+    <input id="avatars" type="file" accept=".zip" />
+
+    <label>Canvas size (px)</label>
+    <div class="row">
+      <input id="width" type="number" value="1024" min="512" max="2048" step="32" style="width:50%">
+      <input id="height" type="number" value="1024" min="512" max="2048" step="32" style="width:50%">
+    </div>
+
+    <label>Options</label>
+    <div class="row" style="flex-wrap:wrap">
+      <span class="badge"><input id="show-avg" type="checkbox" checked> show average</span>
+      <span class="badge"><input id="show-table" type="checkbox" checked> show score table</span>
+      <span class="badge"><input id="submitter-mark" type="checkbox" checked> highlight submitter</span>
+    </div>
+
+    <div style="height:8px"></div>
+    <button class="primary" id="generate">Generate cards</button>
+    <div style="height:8px"></div>
+    <button id="download-zip" disabled>⬇️ Download all (ZIP)</button>
+    <small class="hint">Tip: right-click a preview to “Save image as…”</small>
+  </section>
+
+  <section class="panel">
+    <div class="meta">
+      <div><span class="badge">Status: <span id="status">Idle</span></span></div>
+      <div><span class="badge"><kbd>PNG</kbd> transparent</span></div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+</main>
+
+<footer>
+  Built as a static alternative to the Streamlit app. Parsing via Papa Parse; zipping via JSZip. Works locally in a browser.
+</footer>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" integrity="sha512-+7m1xP3bMS/5V9om0oEfKpGfmQh8r37fTnLK1c9vF8l0bAUv3yBkN5W0kOxkqg0lQO8nLqX3lQ9v3gCFxjL5yw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-xKzop2Y58bF4eCWsQKkA5s0H+Gf5mvT0r8Bz3YpJb9bf1e0xq0q1i+J7q2C7z0mCb5g6r1y5vJmYzRW4tZ4PZQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" integrity="sha512-Gu3Qq3u1s3VxZ1A+Z2c9H9nCkq1oWkq1z2t9nJ4t7DT0Q2cZQpH4rZyK2h2D9QFjV3g1qZ6rC5J4j2S3k3Z3WQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script>
+const $ = (sel) => document.querySelector(sel);
+const grid = $("#grid");
+const statusEl = $("#status");
+const btnGen = $("#generate");
+const btnZip = $("#download-zip");
+
+let avatarZip = null;
+let avatarMap = {}; // filename -> Blob URL
+let peopleMap = {}; // name -> avatar filename
+
+$("#avatars").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if(!file){ avatarZip=null; avatarMap={}; return; }
+  status("Reading avatars ZIP…");
+  const data = await file.arrayBuffer();
+  const zip = await JSZip.loadAsync(data);
+  avatarZip = zip;
+  avatarMap = {};
+  const entries = Object.values(zip.files);
+  for(const f of entries){
+    if(f.dir) continue;
+    const blob = await f.async("blob");
+    avatarMap[f.name.split('/').pop()] = URL.createObjectURL(blob);
+  }
+  status(`Loaded ${Object.keys(avatarMap).length} avatar images.`);
+});
+
+$("#people").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if(!file){ peopleMap={}; return; }
+  status("Parsing people CSV…");
+  const text = await file.text();
+  const res = Papa.parse(text, {header:true, skipEmptyLines:true});
+  peopleMap = {};
+  for(const row of res.data){
+    if(row.Name && row.AvatarFileName){
+      peopleMap[row.Name.trim()] = row.AvatarFileName.trim();
+    }
+  }
+  status(`Loaded ${Object.keys(peopleMap).length} people.`);
+});
+
+function status(msg){ statusEl.textContent = msg; }
+
+btnGen.addEventListener("click", async () => {
+  const scoresFile = $("#scores").files[0];
+  if(!scoresFile){ alert("Please choose a scores CSV first."); return; }
+  status("Parsing scores CSV…");
+  const text = await scoresFile.text();
+  const res = Papa.parse(text, {header:true, skipEmptyLines:true});
+  const rows = res.data;
+  const width = parseInt($("#width").value,10)||1024;
+  const height = parseInt($("#height").value,10)||1024;
+  const showAvg = $("#show-avg").checked;
+  const showTable = $("#show-table").checked;
+  const markSubmitter = $("#submitter-mark").checked;
+
+  grid.innerHTML = "";
+  status("Rendering cards…");
+
+  // Determine people columns from first row (exclude known columns)
+  const exclude = new Set(["Submitter","Song","Artist","Average"]);
+  const peopleCols = Object.keys(rows[0]).filter(k => !exclude.has(k));
+
+  const images = []; // {name, blob}
+
+  for(const row of rows){
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    // transparent bg
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0,0,width,height);
+
+    // layout
+    const pad = Math.round(width*0.05);
+    const innerW = width - pad*2;
+    const titleY = pad + 10;
+
+    // Title
+    ctx.font = `700 ${Math.round(width*0.05)}px ui-sans-serif, system-ui, -apple-system`;
+    ctx.fillStyle = "#e6e6e6";
+    ctx.textBaseline = "top";
+    wrapText(ctx, `${row.Song||""}`, pad, titleY, innerW, Math.round(width*0.06));
+
+    // Artist
+    ctx.font = `600 ${Math.round(width*0.028)}px ui-sans-serif, system-ui, -apple-system`;
+    ctx.fillStyle = "#a8b0bf";
+    const artistY = titleY + Math.round(width*0.14);
+    ctx.fillText(`${row.Artist||""}`, pad, artistY);
+
+    // Average badge
+    if(showAvg && row.Average){
+      drawBadge(ctx, width-pad-10, artistY, `Avg ${Number(row.Average).toFixed(2)}`, {align:"right"});
+    }
+
+    // Submitter
+    if(markSubmitter && row.Submitter){
+      drawBadge(ctx, pad, artistY, `Submitter: ${row.Submitter}`, {align:"left", fill:"#0e1320", stroke:"#3b405a", text:"#f6d365"});
+    }
+
+    // Avatars strip (optional)
+    const submitter = (row.Submitter||"").trim();
+    const submitterAvatar = avatarFor(submitter);
+    if(submitterAvatar){
+      await drawAvatarCircle(ctx, submitterAvatar, width-pad-80, pad+10, Math.round(width*0.05));
+    }
+
+    // Scores table
+    if(showTable){
+      const tableY = artistY + Math.round(width*0.06);
+      drawScoresTable(ctx, row, peopleCols, pad, tableY, innerW, Math.round(width*0.03));
+    }
+
+    const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
+    const songSlug = slugify(row.Song||"song");
+    const name = `${songSlug}.png`;
+    images.push({name, blob});
+
+    const url = URL.createObjectURL(blob);
+    const card = document.createElement("div");
+    card.className = "card";
+    const prev = document.createElement("div");
+    prev.className = "preview";
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = row.Song || "card";
+    prev.appendChild(img);
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.innerHTML = `<span>${row.Song||"(untitled)"} — ${row.Artist||""}</span><span>${row.Submitter||""}</span>`;
+    const dl = document.createElement("button");
+    dl.textContent = "⬇️ Download PNG";
+    dl.addEventListener("click", () => saveAs(blob, name));
+    card.appendChild(prev);
+    card.appendChild(meta);
+    card.appendChild(dl);
+    grid.appendChild(card);
+  }
+
+  // Enable ZIP download
+  btnZip.disabled = false;
+  btnZip.onclick = async () => {
+    status("Packaging ZIP…");
+    const zip = new JSZip();
+    for(const it of images){
+      zip.file(it.name, it.blob);
+    }
+    const zblob = await zip.generateAsync({type:"blob"});
+    saveAs(zblob, "song_cards.zip");
+    status("Ready");
+  };
+
+  status(`Generated ${images.length} cards.`);
+});
+
+function slugify(s){
+  return String(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+}
+
+function avatarFor(name){
+  const fname = peopleMap[name];
+  if(!fname) return null;
+  return avatarMap[fname] || null;
+}
+
+async function drawAvatarCircle(ctx, src, x, y, r){
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI*2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(img, x-r, y-r, r*2, r*2);
+      ctx.restore();
+      res();
+    };
+    img.src = src;
+  });
+}
+
+function drawBadge(ctx, x, y, text, opts={}){
+  const padX = 12, padY = 8;
+  ctx.font = `700 ${Math.round(ctx.canvas.width*0.022)}px ui-sans-serif, system-ui, -apple-system`;
+  const m = ctx.measureText(text);
+  const w = m.width + padX*2;
+  const h = Math.round(ctx.canvas.width*0.04);
+  const bx = opts.align==="right"? x - w : x;
+  const by = y;
+  const fill = opts.fill || "#141820aa";
+  const stroke = opts.stroke || "#3b405a88";
+  const textCol = opts.text || "#e6e6e6";
+  roundRect(ctx, bx, by, w, h, 12, fill, stroke);
+  ctx.fillStyle = textCol;
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, bx+padX, by + h/2);
+}
+
+function roundRect(ctx, x, y, w, h, r, fill, stroke){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if(stroke){
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = String(text).split(/\s+/);
+  let line = "", yy = y;
+  for(let i=0;i<words.length;i++){
+    const test = line? line + " " + words[i] : words[i];
+    const w = ctx.measureText(test).width;
+    if(w > maxWidth && i>0){
+      ctx.fillText(line, x, yy);
+      line = words[i];
+      yy += lineHeight;
+    }else{
+      line = test;
+    }
+  }
+  if(line) ctx.fillText(line, x, yy);
+}
+
+function drawScoresTable(ctx, row, peopleCols, x, y, w, fontSize){
+  // Extract numeric scores
+  const vals = [];
+  for(const k of peopleCols){
+    const v = Number(row[k]);
+    if(!Number.isNaN(v)) vals.push(v);
+  }
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const colW = w;
+  const rH = fontSize * 1.8;
+  const nameW = Math.round(w*0.42);
+  const scoreW = Math.round(w*0.18);
+  const gap = 6;
+  ctx.font = `600 ${fontSize}px ui-sans-serif, system-ui, -apple-system`;
+  ctx.textBaseline = "middle";
+
+  // Background panel
+  roundRect(ctx, x-6, y-6, w+12, rH*(peopleCols.length)+12, 16, "#0e1320aa", "#2a325088");
+
+  // Draw rows
+  let yy = y + rH/2;
+  for(const k of peopleCols){
+    const name = k;
+    const val = Number(row[k]);
+    // name
+    ctx.fillStyle = "#cbd5e1";
+    ctx.fillText(name, x + 8, yy);
+
+    // submitter highlight
+    if($("#submitter-mark").checked && String(row.Submitter||"").trim() === name.trim()){
+      // glow bar
+      ctx.fillStyle = "rgba(246, 211, 101, 0.20)";
+      ctx.fillRect(x+2, yy-rH/2+2, w-4, rH-4);
+    }
+
+    // avatar (optional)
+    const av = avatarFor(name);
+    if(av){
+      const r = Math.round(fontSize*0.7);
+      // draw left of name
+      drawAvatarSmall(ctx, av, x - r*2 - 6, yy, r);
+    }
+
+    // score chip
+    if(!Number.isNaN(val)){
+      const t = (val - min) / (max - min || 1);
+      const col = lerpColor([249,106,106],[106,227,140], t);
+      const textCol = "#0b0e14";
+      const chipW = 64, chipH = Math.round(fontSize*1.4);
+      roundRect(ctx, x + w - chipW - 8, yy - chipH/2, chipW, chipH, 10, `rgb(${col.join(",")})`, "#00000022");
+      ctx.fillStyle = textCol;
+      ctx.font = `800 ${fontSize}px ui-sans-serif, system-ui, -apple-system`;
+      const valText = String(val);
+      const mw = ctx.measureText(valText).width;
+      ctx.fillText(valText, x + w - chipW - 8 + (chipW-mw)/2, yy);
+    }
+    yy += rH;
+  }
+}
+
+function drawAvatarSmall(ctx, src, cx, cy, r){
+  const img = new Image();
+  img.onload = () => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(img, cx-r, cy-r, r*2, r*2);
+    ctx.restore();
+  };
+  img.src = src;
+}
+
+function lerpColor(a,b,t){
+  const out = [0,0,0];
+  for(let i=0;i<3;i++){
+    out[i] = Math.round(a[i] + (b[i]-a[i]) * (t<0?0:(t>1?1:t)));
+  }
+  return out;
+}
+</script>
+</body>
+</html>
