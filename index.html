@@ -6,21 +6,14 @@
   <title>Song Scoring Dashboard</title>
   <style>
     :root{
-      --bg:#0b0b0c;          /* page background (not exported) */
-      --ink:#e8e8ea;         /* primary text */
-      --muted:#a7a7ab;       /* secondary text */
-      --accent:#7dd3fc;      /* ui highlights */
-      --card:#111114;        /* card background (can be toggled transparent on export) */
-      --ring:#2a2a31;        /* outlines */
-      --green:#16a34a;       /* highest */
-      --red:#dc2626;         /* lowest */
-      --yellow:#facc15;      /* submitter mark */
+      --bg:#0b0b0c; --ink:#e8e8ea; --muted:#a7a7ab; --accent:#7dd3fc; --card:#111114; --ring:#2a2a31;
+      --green:#16a34a; --red:#dc2626; --yellow:#facc15;
+      --gold:#f5c542; --silver:#c0c0c8; --bronze:#cd7f32;
     }
     html,body{height:100%}
     body{
       margin:0; font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background:var(--bg); color:var(--ink);
-      display:flex; flex-direction:column;
+      background:var(--bg); color:var(--ink); display:flex; flex-direction:column;
     }
     header{position:sticky; top:0; z-index:10; backdrop-filter:saturate(1.2) blur(6px); background:linear-gradient(180deg, #0b0b0ccc, #0b0b0c80 70%, transparent);}
     .container{max-width:1100px; margin:0 auto; padding:20px;}
@@ -32,6 +25,7 @@
     input, select, button, textarea{
       background:#0f0f12; color:var(--ink); border:1px solid var(--ring); border-radius:10px; padding:10px 12px; width:100%; outline:none;
     }
+    textarea{min-height:160px}
     input[type="number"]{appearance:textfield}
     input:focus, select:focus, textarea:focus{border-color:#3b82f6; box-shadow:0 0 0 2px #3b82f640}
     button{cursor:pointer; border:1px solid #2b2b33; background:linear-gradient(180deg,#1b1b20,#121216); font-weight:600}
@@ -39,11 +33,15 @@
     button.ghost{background:transparent}
     .row{display:flex; gap:10px}
 
-    /* Roster table */
-    .roster{margin-top:12px; display:grid; grid-template-columns: 1fr auto; gap:8px;}
+    /* Roster */
+    .roster{margin-top:12px; display:grid; grid-template-columns: 1fr auto auto auto; gap:8px;}
     .roster input{width:100%}
 
-    /* Song entry form */
+    /* Avatars — square */
+    .avatar{width:24px; height:24px; border-radius:6px; object-fit:cover; border:1px solid var(--ring); background:#0f0f12}
+    .avatar.lg{width:28px; height:28px; border-radius:6px}
+
+    /* Form */
     .song-form{margin-top:18px; padding:16px; border:1px dashed var(--ring); border-radius:14px}
     .song-grid{display:grid; gap:10px; grid-template-columns: repeat(12,1fr)}
     .song-grid .span4{grid-column: span 4}
@@ -54,25 +52,62 @@
     .card{position:relative; background:var(--card); border:1px solid var(--ring); border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:8px}
     .card.compact{padding:12px; border-radius:14px}
     .card.borderless{border-color:transparent; background:transparent}
-    .title{font-size:18px; font-weight:700}
-    .artist{font-size:14px; color:var(--muted); margin-top:-2px; border-bottom:1px dashed var(--ring); padding-bottom:8px}
-    .scores{display:grid; grid-template-columns: 1fr auto; row-gap:6px; column-gap:8px; align-items:center}
-    .badge{display:inline-flex; align-items:center; gap:6px}
-    .chip{font-size:11px; border-radius:999px; padding:2px 6px; border:1px solid var(--ring); color:var(--muted)}
-    .score{font-variant-numeric:tabular-nums; font-weight:700}
+
+    /* Title/Artist: single line; shrink-to-fit via JS */
+    .title{font-size:18px; font-weight:800; line-height:1.15; white-space:nowrap; overflow:hidden}
+    .artist{font-size:14px; color:var(--muted); margin-top:-2px; border-bottom:1px dashed var(--ring); padding-bottom:8px; white-space:nowrap; overflow:hidden}
+
+    /* Centered rank + avg hero row */
+    .hero{
+      display:grid; grid-template-columns:auto auto; justify-content:center; align-items:baseline; gap:14px; margin-top:4px;
+    }
+    .hero .rank, .hero .avgnum{
+      font-size:18px; font-weight:800; line-height:1.15; white-space:nowrap; overflow:hidden;
+    }
+
+    /* Score grid */
+    .scores{
+      display:grid; grid-template-columns: 1fr auto;
+      row-gap:8px; column-gap:8px; align-items:center;
+      grid-auto-rows: 28px;
+    }
+    .badge{
+      display:grid; grid-template-columns: auto 1fr auto; /* avatar | name | submitter tag */
+      align-items:center; gap:8px; min-width:0;
+    }
+    .name{
+      font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .score-cell{ text-align:right; display:flex; align-items:center; justify-content:flex-end; gap:4px; }
+    .score{font-variant-numeric:tabular-nums; font-weight:700; display:inline-block; min-width:3.5ch; text-align:right}
     .score.high{color:var(--green)}
     .score.low{color:var(--red)}
-    .markN{display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:4px; background:var(--yellow); color:#111; font-size:10px; font-weight:900}
-    .avg{margin-top:6px; font-weight:700}
-    .avg small{color:var(--muted); font-weight:500}
-    .card-actions{display:flex; gap:8px; margin-top:8px}
+    .markSubmitter{
+      display:inline-flex; align-items:center; justify-content:center;
+      height:18px; padding:0 6px; border-radius:6px; background:var(--yellow); color:#111; font-size:11px; font-weight:900
+    }
 
+    .card-actions{display:flex; gap:8px; margin-top:8px}
     .empty{border:1px dashed var(--ring); border-radius:14px; padding:20px; color:var(--muted); text-align:center}
+
+    /* Favorite star shown before a scorer's number */
+    .favStar{ font-weight:900; margin-right:4px; color:var(--yellow); }
+
+    /* Dialog */
+    dialog{border:1px solid var(--ring); border-radius:14px; background:#0f0f12; color:var(--ink); padding:16px; max-width:860px}
+    dialog::backdrop{background:rgba(0,0,0,.6)}
+    .grid{display:grid; gap:10px; grid-template-columns: repeat(12,1fr)}
+    .span6{grid-column: span 6}
+    .span8{grid-column: span 8}
+    .span12{grid-column: 1 / -1}
+    .hints{font-size:12px; color:var(--muted)}
 
     @media (max-width:840px){
       .toolbar .block{grid-column: span 6}
       .toolbar .block.wide{grid-column: 1 / -1}
       .song-grid .span4{grid-column: span 6}
+      .span6{grid-column: 1 / -1}
+      .span8{grid-column: 1 / -1}
     }
   </style>
 </head>
@@ -83,7 +118,7 @@
       <div class="toolbar" role="region" aria-label="Controls">
         <div class="block">
           <label for="peopleCount">Number of people</label>
-          <input id="peopleCount" type="number" min="1" value="5" />
+          <input id="peopleCount" type="number" min="1" value="7" />
         </div>
         <div class="block wide">
           <label>People (names)</label>
@@ -100,7 +135,7 @@
         <div class="block">
           <label for="sortBy">Sort by</label>
           <select id="sortBy">
-            <option value="avg_desc">Average (High → Low)</option>
+            <option value="avg_desc">Ranking (High → Low)</option>
             <option value="avg_asc">Average (Low → High)</option>
             <option value="title_asc">Title (A → Z)</option>
             <option value="artist_asc">Artist (A → Z)</option>
@@ -110,17 +145,21 @@
           <label>&nbsp;</label>
           <button id="exportAll" title="Export all cards as transparent PNGs">Export All PNGs</button>
         </div>
+        <div class="block">
+          <label>&nbsp;</label>
+          <button id="openBulk" class="primary" title="Paste from Google Slides/Sheets">Bulk add (paste CSV/TSV)</button>
+        </div>
       </div>
 
       <form id="songForm" class="song-form" autocomplete="off">
         <div class="song-grid">
           <div class="span4">
             <label for="title">Song title</label>
-            <input id="title" required placeholder="e.g., Dreams" />
+            <input id="title" required placeholder="e.g., This Song" />
           </div>
           <div class="span4">
             <label for="artist">Artist</label>
-            <input id="artist" required placeholder="e.g., Fleetwood Mac" />
+            <input id="artist" required placeholder="e.g., Music Man" />
           </div>
           <div class="span4">
             <label for="submitter">Submitter</label>
@@ -154,6 +193,46 @@
     </section>
   </main>
 
+  <!-- Bulk import dialog -->
+  <dialog id="bulkDialog">
+    <form method="dialog" id="bulkForm">
+      <h2 style="margin:0 0 8px">Bulk add songs</h2>
+      <p class="hints">Paste rows from Google <b>Slides</b> (table) or <b>Sheets</b>. Columns can be in any order as long as headers exist. Required headers: <code>song</code>, <code>artist</code>, <code>submitter</code>. Headers matching roster names will be treated as that person's score. Add * after a score to mark it as a favorite.</p>
+      <div class="grid">
+        <div class="span12">
+          <label for="bulkText">Rows (CSV/TSV)</label>
+          <textarea id="bulkText" placeholder="song\tartist\tsubmitter\tNick\tJiho\t...\nEverlong\tFoo Fighters\tNick\t9.5*\t8.9\t...\n...\n"></textarea>
+        </div>
+        <div class="span6">
+          <label for="hasHeader">First row is header</label>
+          <select id="hasHeader">
+            <option value="yes" selected>Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="span6">
+          <label for="delimiter">Delimiter</label>
+          <select id="delimiter">
+            <option value="auto" selected>Auto-detect</option>
+            <option value=",">Comma</option>
+            <option value="\t">Tab</option>
+            <option value=";">Semicolon</option>
+          </select>
+        </div>
+        <div class="span12">
+          <div class="row" style="justify-content:flex-end; gap:8px">
+            <button value="cancel" type="button" id="cancelBulk" class="ghost">Cancel</button>
+            <button value="default" type="submit" class="primary">Import rows</button>
+          </div>
+        </div>
+      </div>
+      <details class="hints" style="margin-top:8px">
+        <summary>Header examples</summary>
+        <code>song,artist,submitter,Nick,Jiho,Desmond,Roanyk,Jaheim,Nathan,Jeff</code>
+      </details>
+    </form>
+  </dialog>
+
   <!-- html2canvas for export -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
@@ -166,45 +245,130 @@
     const layoutStyleEl = document.getElementById('layoutStyle');
     const sortByEl = document.getElementById('sortBy');
     const exportAllBtn = document.getElementById('exportAll');
+    const submitterEl = document.getElementById('submitter');
+    const titleEl = document.getElementById('title');
+    const artistEl = document.getElementById('artist');
 
-    let roster = ['Alice','Bob','Charlie','Dana','Eli'];
-    let songs = []; // {id,title,artist,submitter,scores:{name:value}, avg}
+    // Bulk dialog
+    const bulkDialog = document.getElementById('bulkDialog');
+    const openBulkBtn = document.getElementById('openBulk');
+    const bulkForm = document.getElementById('bulkForm');
+    const bulkText = document.getElementById('bulkText');
+    const hasHeaderEl = document.getElementById('hasHeader');
+    const delimiterEl = document.getElementById('delimiter');
+    const cancelBulkBtn = document.getElementById('cancelBulk');
+
+    let roster = ['Nick','Jiho','Desmond','Roanyk','Jaheim','Nathan','Jeff'];
+    let photos = {}; // { [name:string]: dataUrl }
+    // songs: {id,title,artist,submitter,scores:{name:number}, favorites:{name:true}, avg}
+    let songs = [];
+    let ranksMap = new Map(); // song.id -> rank
+
+    // Tie-breaking (random order for ties)
+    let tieBreakers = new Map();  // song.id -> random number for current render
+    const EPS = 1e-6;
+    function refreshTieBreakers(){
+      tieBreakers = new Map(songs.map(s => [s.id, Math.random()]));
+    }
 
     /** Utilities */
     const uid = () => Math.random().toString(36).slice(2,9);
     const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
     const sanitizeFilename = (s) => s.replace(/[\/:*?"<>|]/g,'_').slice(0,80);
+    const readImageAsDataURL = (file) => new Promise((resolve,reject)=>{ const fr = new FileReader(); fr.onload = ()=>resolve(fr.result); fr.onerror = reject; fr.readAsDataURL(file); });
+
+    function norm(s){return (s||'').toString().trim();}
+    function lc(s){return norm(s).toLowerCase();}
+    const RESERVED_HEADERS = new Set(['song','title','artist','submitter','average']);
+    function isBlankScore(v){
+      const t = lc(v);
+      return t==='' || t==='/' || t==='na' || t==='n/a' || t==='–' || t==='—' || t==='nil';
+    }
+
+    // Parse a score cell that may have a trailing star (favorite) like "9.4*", "10 ★", or "8.75 *"
+    function parseScoreCell(raw){
+      const txt = (raw || '').toString().trim();
+      const favorite = /[*★]/.test(txt);
+      const num = parseFloat(txt.replace(/[^\d.]+/g,''));
+      return { num: Number.isFinite(num) ? num : NaN, favorite };
+    }
+
+    function personAvatarEl(name, size='sm'){
+      const img = document.createElement('img');
+      img.className = size==='lg' ? 'avatar lg' : 'avatar';
+      img.alt = name ? `${name}'s avatar` : 'avatar';
+      if(photos[name]) img.src = photos[name];
+      else { img.style.background = '#0f0f12'; img.style.border = '1px solid var(--ring)'; }
+      return img;
+    }
+
+    // Fit text to a single line by shrinking font-size (down to a min)
+    function shrinkToFit(el, minPx=10){
+      const style = getComputedStyle(el);
+      const base = parseFloat(style.fontSize) || 18;
+      el.style.fontSize = base + 'px';
+      let guard = 0;
+      while (el.scrollWidth > el.clientWidth && guard < 60) {
+        const cur = parseFloat(getComputedStyle(el).fontSize);
+        if (cur <= minPx) break;
+        el.style.fontSize = (cur - 0.5) + 'px';
+        guard++;
+      }
+    }
+    const resizeObserver = new ResizeObserver(() => {
+      document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(shrinkToFit);
+    });
+    window.addEventListener('resize', () => {
+      document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(shrinkToFit);
+    });
 
     function renderRosterInputs(){
       rosterEl.innerHTML = '';
       datalistEl.innerHTML = '';
       roster.forEach((name, i)=>{
-        const nameInput = document.createElement('input');
-        nameInput.value = name;
-        nameInput.placeholder = `Person ${i+1}`;
-        nameInput.addEventListener('change', ()=>{
-          roster[i] = nameInput.value.trim();
-          rebuildScoreInputs();
-          fillDatalist();
-          refreshAllCards();
+        const rowName = document.createElement('input');
+        rowName.value = name;
+        rowName.placeholder = `Person ${i+1}`;
+        rowName.addEventListener('change', ()=>{
+          const oldName = roster[i];
+          const newName = rowName.value.trim();
+          if(photos[oldName] && !photos[newName]) photos[newName] = photos[oldName];
+          if(oldName !== newName){ delete photos[oldName]; }
+          roster[i] = newName;
+          rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderRosterInputs();
         });
-        const removeBtn = document.createElement('button');
-        removeBtn.textContent = '✕';
-        removeBtn.type = 'button';
-        removeBtn.style.width='42px';
+
+        const uploadBtn = document.createElement('input');
+        uploadBtn.type = 'file'; uploadBtn.accept = 'image/*'; uploadBtn.title='Upload avatar'; uploadBtn.style.width='42px';
+        uploadBtn.addEventListener('change', async ()=>{
+          const file = uploadBtn.files?.[0]; if(!file) return;
+          const dataUrl = await readImageAsDataURL(file);
+          photos[roster[i]] = dataUrl; refreshAllCards(); renderRosterInputs(); rebuildScoreInputs();
+        });
+
+        const clearBtn = document.createElement('button'); clearBtn.textContent='🗑'; clearBtn.type='button'; clearBtn.title='Remove avatar'; clearBtn.style.width='42px';
+        clearBtn.addEventListener('click', ()=>{ delete photos[roster[i]]; refreshAllCards(); renderRosterInputs(); rebuildScoreInputs(); });
+
+        const removeBtn = document.createElement('button'); removeBtn.textContent='✕'; removeBtn.type='button'; removeBtn.style.width='42px';
         removeBtn.addEventListener('click', ()=>{
+          delete photos[roster[i]];
           roster.splice(i,1);
           peopleCountEl.value = roster.length;
-          renderRosterInputs();
-          rebuildScoreInputs();
-          fillDatalist();
-          refreshAllCards();
+          renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards();
         });
-        rosterEl.appendChild(nameInput);
+
+        const preview = personAvatarEl(name, 'lg');
+
+        const nameWrap = document.createElement('div');
+        nameWrap.style.display='flex'; nameWrap.style.alignItems='center'; nameWrap.style.gap='8px';
+        nameWrap.appendChild(preview); nameWrap.appendChild(rowName);
+
+        rosterEl.appendChild(nameWrap);
+        rosterEl.appendChild(uploadBtn);
+        rosterEl.appendChild(clearBtn);
         rosterEl.appendChild(removeBtn);
 
-        const opt = document.createElement('option');
-        opt.value = name; datalistEl.appendChild(opt);
+        const opt = document.createElement('option'); opt.value = name; datalistEl.appendChild(opt);
       });
     }
 
@@ -215,27 +379,62 @@
 
     function rebuildScoreInputs(){
       scoreInputsEl.innerHTML = '';
+      const sub = (submitterEl.value || '').trim().toLowerCase();
       roster.forEach((name, idx)=>{
         const wrap = document.createElement('div');
-        wrap.style.minWidth='160px'; wrap.style.flex='1 1 160px';
-        const lab = document.createElement('label'); lab.textContent = name || `Person ${idx+1}`; lab.style.display='block'; lab.style.color='var(--muted)'; lab.style.fontSize='12px'; lab.style.marginBottom='4px';
+        wrap.style.minWidth='200px'; wrap.style.flex='1 1 220px';
+
+        const who = name || `Person ${idx+1}`;
+        const isSubmitter = who.trim().toLowerCase() === sub && sub.length>0;
+
+        const img = personAvatarEl(who);
+        const txt = document.createElement('span'); txt.className='name'; txt.textContent = who;
+
+        const tag = document.createElement('span');
+        if(isSubmitter){ tag.className='markSubmitter'; tag.textContent='Submitter'; }
+
+        const left = document.createElement('div');
+        left.className='badge';
+        left.appendChild(img);
+        left.appendChild(txt);
+        if(isSubmitter) left.appendChild(tag);
+
         const inp = document.createElement('input');
-        inp.type='number'; inp.step='0.01'; inp.placeholder='score';
-        inp.dataset.person = name || `Person ${idx+1}`;
-        wrap.appendChild(lab); wrap.appendChild(inp);
+        inp.type='number'; inp.step='0.01'; inp.placeholder='score'; inp.dataset.person = who;
+        if(isSubmitter){
+          inp.disabled = true; inp.title = 'Submitter cannot score their own song';
+        }
+
+        const row = document.createElement('div');
+        row.style.display='grid';
+        row.style.gridTemplateColumns='1fr 90px';
+        row.style.alignItems='center';
+        row.style.gap='8px';
+
+        const scoreWrap = document.createElement('div');
+        scoreWrap.className='score-cell';
+        scoreWrap.appendChild(inp);
+
+        row.appendChild(left);
+        row.appendChild(scoreWrap);
+        wrap.appendChild(row);
+
         scoreInputsEl.appendChild(wrap);
       });
     }
+
+    submitterEl.addEventListener('input', rebuildScoreInputs);
 
     peopleCountEl.addEventListener('change', ()=>{
       const n = clamp(parseInt(peopleCountEl.value||'0',10),1,50);
       const diff = n - roster.length;
       if(diff>0){ for(let i=0;i<diff;i++){ roster.push(`Person ${roster.length+1}`);} }
-      if(diff<0){ roster.splice(n); }
-      renderRosterInputs();
-      rebuildScoreInputs();
-      fillDatalist();
-      refreshAllCards();
+      if(diff<0){
+        const removed = roster.slice(n);
+        removed.forEach(name => delete photos[name]);
+        roster.splice(n);
+      }
+      renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards();
     });
 
     function computeAverage(scores){
@@ -263,65 +462,151 @@
       const es = document.getElementById('emptyState'); if(es) es.remove();
     }
 
-    function songSortFn(a,b){
-      const sel = sortByEl.value;
-      if(sel==='avg_desc') return (b.avg)-(a.avg);
-      if(sel==='avg_asc') return (a.avg)-(b.avg);
-      if(sel==='title_asc') return a.title.localeCompare(b.title, undefined, {sensitivity:'base'});
-      if(sel==='artist_asc') return a.artist.localeCompare(b.artist, undefined, {sensitivity:'base'});
-      return (b.avg)-(a.avg);
+    // Ranking helpers
+    function sortByRanking(a,b){
+      const diff = (b.avg) - (a.avg);
+      if (Math.abs(diff) > EPS) return diff;
+      // tie → random (stable within a render)
+      return (tieBreakers.get(a.id) ?? 0) - (tieBreakers.get(b.id) ?? 0);
+    }
+// Fisher–Yates shuffle
+function shuffle(arr){
+  for (let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function assignRanks(){
+  // sort by avg high→low first
+  const sorted = [...songs].sort((a,b)=> (b.avg)-(a.avg));
+  const eps = 1e-6;
+
+  // group songs with (nearly) identical avgs
+  const groups = [];
+  let cur = [];
+  for (const s of sorted){
+    if (!cur.length || Math.abs(s.avg - cur[0].avg) <= eps){
+      cur.push(s);
+    } else {
+      groups.push(cur);
+      cur = [s];
+    }
+  }
+  if (cur.length) groups.push(cur);
+
+  // shuffle inside each tie group, then concatenate
+  const ordered = [];
+  for (const g of groups){
+    shuffle(g);
+    ordered.push(...g);
+  }
+
+  // assign consecutive ranks based on the new order
+  ranksMap = new Map();
+  ordered.forEach((s, idx)=>{ ranksMap.set(s.id, idx + 1); });
+
+  // make the display order match the randomized tie-break order
+  songs = ordered;
+}
+
+    function placeText(n){
+      const s = String(n);
+      if(s.endsWith('11') || s.endsWith('12') || s.endsWith('13')) return `${n}th`;
+      if(s.endsWith('1')) return `${n}st`;
+      if(s.endsWith('2')) return `${n}nd`;
+      if(s.endsWith('3')) return `${n}rd`;
+      return `${n}th`;
+    }
+    function placementColor(rank){
+      if(rank===1) return getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#f5c542';
+      if(rank===2) return getComputedStyle(document.documentElement).getPropertyValue('--silver').trim() || '#c0c0c8';
+      if(rank===3) return getComputedStyle(document.documentElement).getPropertyValue('--bronze').trim() || '#cd7f32';
+      return getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#e8e8ea';
     }
 
     function rerenderCards(){
       cardsEl.innerHTML = '';
       clearEmptyState();
-      songs.sort(songSortFn);
+      sortByEl.value = 'avg_desc';
+      refreshTieBreakers();                // randomize ties this render
+      songs.sort(sortByRanking);
+      assignRanks();
       songs.forEach(song=> cardsEl.appendChild(renderCard(song)));
+      document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
     }
 
     function refreshAllCards(){
+      refreshTieBreakers();                // randomize ties when data changed
+      songs.sort(sortByRanking); 
+      assignRanks();
       document.querySelectorAll('.card').forEach(card=>{
         const id = card.dataset.id;
         const song = songs.find(s=>s.id===id);
-        if(song){
-          card.replaceWith(renderCard(song));
-        }
+        if(song){ card.replaceWith(renderCard(song)); }
       });
+      document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
     }
 
     function renderCard(song){
       const {maxNames, minNames} = getExtrema(song.scores);
+      const rank = ranksMap.get(song.id) ?? 0;
+      const color = placementColor(rank);
+
       const card = document.createElement('article');
       card.className = 'card';
       card.dataset.id = song.id;
 
-      // Apply layout
       const style = layoutStyleEl.value;
       card.classList.toggle('compact', style==='compact');
       card.classList.toggle('borderless', style==='borderless');
 
-      // Header
-      const title = document.createElement('div'); title.className='title'; title.textContent = song.title;
-      const artist = document.createElement('div'); artist.className='artist'; artist.textContent = song.artist;
+      const title = document.createElement('div'); title.className='title'; title.textContent = song.title; title.style.color = color;
+      const artist = document.createElement('div'); artist.className='artist'; artist.textContent = song.artist; artist.style.color = color;
       card.appendChild(title); card.appendChild(artist);
 
-      // Scores grid
+      const hero = document.createElement('div'); hero.className='hero';
+      const rankEl = document.createElement('div'); rankEl.className='rank'; rankEl.textContent = placeText(rank); rankEl.style.color = color;
+      const avgEl = document.createElement('div'); avgEl.className='avgnum'; avgEl.textContent = Number.isFinite(song.avg)? song.avg.toFixed(2) : '—'; avgEl.style.color = color;
+      hero.appendChild(rankEl); hero.appendChild(avgEl);
+      card.appendChild(hero);
+
       const scoresWrap = document.createElement('div'); scoresWrap.className='scores';
       roster.forEach(person=>{
         const rowL = document.createElement('div');
-        const badge = document.createElement('span'); badge.className='badge';
-        const chip = document.createElement('span'); chip.className='chip'; chip.textContent = person;
-        badge.appendChild(chip);
-        // submitter mark — if rater matches submitter OR their name ends with '/'
-        const isSubmitter = (person && song.submitter && person.trim().toLowerCase()===song.submitter.trim().toLowerCase()) || /\/$/.test(person || '');
-        if(isSubmitter){ const n=document.createElement('span'); n.className='markN'; n.title='Submitter'; n.textContent='N'; badge.appendChild(n); }
+        const badge = document.createElement('div'); badge.className='badge';
+
+        const img = personAvatarEl(person);
+        const nameSpan = document.createElement('span'); nameSpan.className='name'; nameSpan.textContent = person;
+        badge.appendChild(img);
+        badge.appendChild(nameSpan);
+
+        const isSubmitter = (person && song.submitter && person.trim().toLowerCase()===song.submitter.trim().toLowerCase());
+        if(isSubmitter){
+          const m=document.createElement('span'); m.className='markSubmitter'; m.title='Submitter'; m.textContent='Submitter'; badge.appendChild(m);
+        }
         rowL.appendChild(badge);
 
-        const val = song.scores[person];
-        const rowR = document.createElement('div');
-        const sv = document.createElement('span'); sv.className='score'; sv.textContent = (val===undefined||val==='')? '—' : String(val);
-        if(maxNames.has(person)) sv.classList.add('high');
-        if(minNames.has(person)) sv.classList.add('low');
+        const rowR = document.createElement('div'); rowR.className='score-cell';
+
+        // Favorite star (from CSV import)
+        const isFav = !!(song.favorites && song.favorites[person]);
+        if(isFav){
+          const star = document.createElement('span');
+          star.className = 'favStar';
+          star.textContent = '★';
+          rowR.appendChild(star);
+        }
+
+        const sv = document.createElement('span'); sv.className='score';
+        if(isSubmitter) sv.textContent = '—';
+        else {
+          const val = song.scores[person];
+          sv.textContent = (val===undefined||val==='')? '—' : String(val);
+          if(maxNames.has(person)) sv.classList.add('high');
+          if(minNames.has(person)) sv.classList.add('low');
+        }
         rowR.appendChild(sv);
 
         scoresWrap.appendChild(rowL);
@@ -329,12 +614,6 @@
       });
       card.appendChild(scoresWrap);
 
-      // Average
-      const avg = document.createElement('div'); avg.className='avg';
-      avg.innerHTML = `<small>Average</small> ${Number.isFinite(song.avg)? song.avg.toFixed(2) : '—'}`;
-      card.appendChild(avg);
-
-      // Actions
       const actions = document.createElement('div'); actions.className='card-actions';
       const dl = document.createElement('button'); dl.textContent = 'Export PNG'; dl.type='button';
       dl.addEventListener('click', ()=> downloadCardPNG(card, `${sanitizeFilename(song.title)}.png`));
@@ -351,12 +630,14 @@
       cardsEl.appendChild(div);
     }
 
-    // Export helpers
+    // Export helpers (hide buttons while exporting)
     async function downloadCardPNG(cardEl, filename){
-      // Temporarily force transparent background if borderless
+      const actions = cardEl.querySelector('.card-actions');
+      const prevDisplay = actions ? actions.style.display : '';
+      if(actions) actions.style.display = 'none';
+
       const originalBG = cardEl.style.backgroundColor;
       const originalBorder = cardEl.style.borderColor;
-      // Ensure visual parity on export but with transparent background
       cardEl.style.backgroundColor = 'transparent';
       cardEl.style.borderColor = 'transparent';
 
@@ -365,6 +646,7 @@
       const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
 
       cardEl.style.backgroundColor = originalBG; cardEl.style.borderColor = originalBorder;
+      if(actions) actions.style.display = prevDisplay;
     }
 
     exportAllBtn.addEventListener('click', async()=>{
@@ -382,25 +664,52 @@
       });
     });
 
-    sortByEl.addEventListener('change', rerenderCards);
+    sortByEl.addEventListener('change', ()=>{
+      if(sortByEl.value === 'avg_desc'){
+        rerenderCards();
+      } else {
+        const val = sortByEl.value;
+        refreshTieBreakers(); // randomize ties for this sort run
+        const fn = (a,b)=>{
+          let diff;
+          if(val==='avg_asc'){
+            diff = (a.avg) - (b.avg);
+          } else if(val==='title_asc'){
+            diff = a.title.localeCompare(b.title, undefined, {sensitivity:'base'});
+          } else if(val==='artist_asc'){
+            diff = a.artist.localeCompare(b.artist, undefined, {sensitivity:'base'});
+          } else {
+            diff = (b.avg) - (a.avg);
+          }
+          if (diff !== 0 && !Number.isNaN(diff)) return diff;
+          // tie → random order
+          return (tieBreakers.get(a.id) ?? 0) - (tieBreakers.get(b.id) ?? 0);
+        };
+        songs.sort(fn);
+        assignRanks();
+        cardsEl.innerHTML=''; clearEmptyState();
+        songs.forEach(s=> cardsEl.appendChild(renderCard(s)));
+        document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
+      }
+    });
 
-    // Form submit
     songForm.addEventListener('submit', (e)=>{
       e.preventDefault();
-      const title = document.getElementById('title').value.trim();
-      const artist = document.getElementById('artist').value.trim();
-      const submitter = document.getElementById('submitter').value.trim();
+      const title = titleEl.value.trim();
+      const artist = artistEl.value.trim();
+      const submitter = submitterEl.value.trim();
       const avgOverride = parseFloat(document.getElementById('avgOverride').value);
 
       const scores = {};
       [...scoreInputsEl.querySelectorAll('input')].forEach(inp=>{
         const who = inp.dataset.person; const val = inp.value.trim();
-        if(val!=='' && !Number.isNaN(parseFloat(val))) scores[who] = parseFloat(val);
+        if(!inp.disabled && val!=='' && !Number.isNaN(parseFloat(val))) scores[who] = parseFloat(val);
       });
 
       const avg = Number.isFinite(avgOverride) ? avgOverride : computeAverage(scores);
 
-      addSong({ id: uid(), title, artist, submitter, scores, avg });
+      // manual add: favorites empty so renderer has consistent shape
+      addSong({ id: uid(), title, artist, submitter, scores, favorites: {}, avg });
       songForm.reset(); rebuildScoreInputs();
     });
 
@@ -408,10 +717,149 @@
       songForm.reset(); rebuildScoreInputs();
     });
 
+    // ===== Bulk import logic =====
+    function autoDelimiter(sample){
+      if(delimiterEl.value !== 'auto') return delimiterEl.value;
+      const counts = [',','\t',';'].map(d=>({d, c:(sample.match(new RegExp(d==='\t'?'\\t':d,'g'))||[]).length}))
+        .sort((a,b)=>b.c-a.c);
+      return (counts[0]?.c>0)? counts[0].d : '\t';
+    }
+
+    // Basic CSV parser with quotes support
+    function parseCSV(text, delim){
+      const out = [];
+      let row = [], val = '', inQuotes = false;
+      for(let i=0;i<text.length;i++){
+        const ch = text[i];
+        if(inQuotes){
+          if(ch==='"' && text[i+1]==='"'){ val+='"'; i++; }
+          else if(ch==='"'){ inQuotes = false; }
+          else { val += ch; }
+          continue;
+        }
+        if(ch==='"'){ inQuotes = true; continue; }
+        if(ch==='\n'){ row.push(val); out.push(row); row=[]; val=''; continue; }
+        if(ch==='\r'){ continue; }
+        if(ch===delim){ row.push(val); val=''; continue; }
+        val += ch;
+      }
+      row.push(val); out.push(row);
+      // trim trailing empty row if present
+      if(out.length && out[out.length-1].every(c=>c==='')) out.pop();
+      return out;
+    }
+
+    function headersToMap(headers){
+      const map = {};
+      headers.forEach((h,idx)=>{ map[lc(h)] = idx; });
+      return map;
+    }
+
+    function matchRosterHeader(h){
+      const key = lc(h);
+      // try exact (case-insensitive) first
+      let exact = roster.find(r => lc(r) === key);
+      if(exact) return exact;
+      // try relaxed: remove punctuation/spaces
+      const relax = key.replace(/[^a-z0-9]/g,'');
+      exact = roster.find(r => lc(r).replace(/[^a-z0-9]/g,'') === relax);
+      return exact || null;
+    }
+
+    function importRows(rows, hasHeader){
+      if(!rows.length) return 0;
+      let headers = [];
+      let dataRows = rows;
+
+      if(hasHeader){
+        headers = rows[0];
+        dataRows = rows.slice(1);
+      } else {
+        // create positional headers as fallback
+        headers = ['song','artist','submitter', ...roster];
+      }
+
+      const hmap = headersToMap(headers);
+      const titleIdx = hmap['song'] ?? hmap['title'] ?? 0;
+      const artistIdx = hmap['artist'] ?? 1;
+      const submitterIdx = hmap['submitter'] ?? 2;
+      const averageIdx = hmap['average'];
+
+      // Discover score columns -> map to roster names; auto-extend roster for new names
+      const scoreCols = [];
+      const newScorers = [];
+      headers.forEach((h,idx)=>{
+        if(idx===titleIdx || idx===artistIdx || idx===submitterIdx || idx===averageIdx) return;
+        const headerName = norm(h);
+        if(!headerName || RESERVED_HEADERS.has(lc(headerName))) return;
+        const who = matchRosterHeader(headerName);
+        if(who){
+          scoreCols.push({idx, who});
+        } else {
+          // add as new scorer
+          newScorers.push(headerName);
+          scoreCols.push({idx, who: headerName});
+        }
+      });
+
+      if(newScorers.length){
+        newScorers.forEach(n=>{ if(!roster.includes(n)) roster.push(n); });
+        peopleCountEl.value = roster.length;
+        renderRosterInputs(); rebuildScoreInputs(); fillDatalist();
+      }
+
+      let added = 0;
+      dataRows.forEach(r=>{
+        const title = norm(r[titleIdx]);
+        const artist = norm(r[artistIdx]);
+        const submitter = norm(r[submitterIdx]);
+        if(!title) return; // skip blanks
+        const scores = {};
+        const favorites = {}; // { [person]: true } when that person starred the song
+        scoreCols.forEach(sc=>{
+          const raw = norm(r[sc.idx]);
+          if(isBlankScore(raw)) return;
+          const { num, favorite } = parseScoreCell(raw);
+          if(Number.isFinite(num)) {
+            scores[sc.who] = num;
+            if(favorite) favorites[sc.who] = true;
+          }
+        });
+        let avg = computeAverage(scores);
+        if(averageIdx!==undefined){
+          const rawAvg = parseFloat(r[averageIdx]);
+          if(Number.isFinite(rawAvg)) avg = rawAvg;
+        }
+        addSong({ id: uid(), title, artist, submitter, scores, favorites, avg });
+        added++;
+      });
+      return added;
+    }
+
+    openBulkBtn.addEventListener('click', ()=>{
+      bulkText.value = '';
+      hasHeaderEl.value = 'yes';
+      delimiterEl.value = 'auto';
+      bulkDialog.showModal();
+    });
+    cancelBulkBtn.addEventListener('click', ()=> bulkDialog.close());
+
+    bulkForm.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const text = bulkText.value.trim();
+      if(!text){ bulkDialog.close(); return; }
+      const delim = autoDelimiter(text);
+      const rows = parseCSV(text.replace(/\r\n?/g,'\n'), delim);
+      const added = importRows(rows, hasHeaderEl.value==='yes');
+      bulkDialog.close();
+      if(added===0) alert('No rows imported. Check your headers: song, artist, submitter, and columns named after roster members. You can add * after a score to mark it as a favorite.');
+    });
+
     // init
     renderRosterInputs();
     rebuildScoreInputs();
     fillDatalist();
+    sortByEl.value = 'avg_desc';
   </script>
 </body>
 </html>
