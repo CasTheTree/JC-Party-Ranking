@@ -118,7 +118,7 @@
       <div class="toolbar" role="region" aria-label="Controls">
         <div class="block">
           <label for="peopleCount">Number of people</label>
-          <input id="peopleCount" type="number" min="1" value="7" />
+          <input id="peopleCount" type="number" min="1" value="5" />
         </div>
         <div class="block wide">
           <label>People (names)</label>
@@ -201,7 +201,7 @@
       <div class="grid">
         <div class="span12">
           <label for="bulkText">Rows (CSV/TSV)</label>
-          <textarea id="bulkText" placeholder="song\tartist\tsubmitter\tNick\tJiho\t...\nEverlong\tFoo Fighters\tNick\t9.5*\t8.9\t...\n...\n"></textarea>
+          <textarea id="bulkText" placeholder="song\artist\submitter\Person 1\Person 2\Person 3\..."></textarea>
         </div>
         <div class="span6">
           <label for="hasHeader">First row is header</label>
@@ -228,7 +228,7 @@
       </div>
       <details class="hints" style="margin-top:8px">
         <summary>Header examples</summary>
-        <code>song,artist,submitter,Nick,Jiho,Desmond,Roanyk,Jaheim,Nathan,Jeff</code>
+        <code>song,artist,submitter,Person 1,Person 2,Person 3,Person 4,Person 5</code>
       </details>
     </form>
   </dialog>
@@ -258,7 +258,7 @@
     const delimiterEl = document.getElementById('delimiter');
     const cancelBulkBtn = document.getElementById('cancelBulk');
 
-    let roster = ['Nick','Jiho','Desmond','Roanyk','Jaheim','Nathan','Jeff'];
+    let roster = ['Person 1','Person 2','Person 3','Person 4','Person 5'];
     let photos = {}; // { [name:string]: dataUrl }
     // songs: {id,title,artist,submitter,scores:{name:number}, favorites:{name:true}, avg}
     let songs = [];
