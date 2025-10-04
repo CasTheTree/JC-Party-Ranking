@@ -37,7 +37,7 @@
     .roster{margin-top:12px; display:grid; grid-template-columns: 1fr auto auto auto; gap:8px;}
     .roster input{width:100%}
 
-    /* Avatars — square */
+    /* Avatars */
     .avatar{width:24px; height:24px; border-radius:6px; object-fit:cover; border:1px solid var(--ring); background:#0f0f12}
     .avatar.lg{width:28px; height:28px; border-radius:6px}
 
@@ -47,23 +47,26 @@
     .song-grid .span4{grid-column: span 4}
     .song-grid .span12{grid-column: 1 / -1}
 
-    /* Cards */
+    /* Cards grid */
     .cards{display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:16px; margin-top:18px}
-    .card{position:relative; background:var(--card); border:1px solid var(--ring); border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:8px}
+
+    /* Base Card (16:9) */
+    .card{
+      position:relative; background:var(--card); border:1px solid var(--ring); border-radius:18px; padding:16px;
+      aspect-ratio:16/9; display:grid; gap:8px;
+    }
     .card.compact{padding:12px; border-radius:14px}
     .card.borderless{border-color:transparent; background:transparent}
 
-    /* Title/Artist: single line; shrink-to-fit via JS */
+    /* Title/Artist */
     .title{font-size:18px; font-weight:800; line-height:1.15; white-space:nowrap; overflow:hidden}
     .artist{font-size:14px; color:var(--muted); margin-top:-2px; border-bottom:1px dashed var(--ring); padding-bottom:8px; white-space:nowrap; overflow:hidden}
 
-    /* Centered rank + avg hero row */
+    /* Hero */
     .hero{
       display:grid; grid-template-columns:auto auto; justify-content:center; align-items:baseline; gap:14px; margin-top:4px;
     }
-    .hero .rank, .hero .avgnum{
-      font-size:18px; font-weight:800; line-height:1.15; white-space:nowrap; overflow:hidden;
-    }
+    .hero .rank, .hero .avgnum{ font-size:18px; font-weight:800; line-height:1.15; white-space:nowrap; overflow:hidden; }
 
     /* Score grid */
     .scores{
@@ -71,36 +74,49 @@
       row-gap:8px; column-gap:8px; align-items:center;
       grid-auto-rows: 28px;
     }
-    .badge{
-      display:grid; grid-template-columns: auto 1fr auto; /* avatar | name | submitter tag */
-      align-items:center; gap:8px; min-width:0;
-    }
-    .name{
-      font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
+    .badge{ display:grid; grid-template-columns: auto 1fr auto; align-items:center; gap:8px; min-width:0; }
+    .name{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
     .score-cell{ text-align:right; display:flex; align-items:center; justify-content:flex-end; gap:4px; }
     .score{font-variant-numeric:tabular-nums; font-weight:700; display:inline-block; min-width:3.5ch; text-align:right}
-    .score.high{color:var(--green)}
-    .score.low{color:var(--red)}
-    .markSubmitter{
-      display:inline-flex; align-items:center; justify-content:center;
-      height:18px; padding:0 6px; border-radius:6px; background:var(--yellow); color:#111; font-size:11px; font-weight:900
-    }
+    .score.high{color:var(--green)} .score.low{color:var(--red)}
+    .markSubmitter{ display:inline-flex; align-items:center; justify-content:center; height:18px; padding:0 6px; border-radius:6px; background:var(--yellow); color:#111; font-size:11px; font-weight:900 }
 
-    .card-actions{display:flex; gap:8px; margin-top:8px}
+    .card-actions{display:flex; gap:8px; margin-top:auto}
     .empty{border:1px dashed var(--ring); border-radius:14px; padding:20px; color:var(--muted); text-align:center}
-
-    /* Favorite star shown before a scorer's number */
     .favStar{ font-weight:900; margin-right:4px; color:var(--yellow); }
 
     /* Dialog */
     dialog{border:1px solid var(--ring); border-radius:14px; background:#0f0f12; color:var(--ink); padding:16px; max-width:860px}
     dialog::backdrop{background:rgba(0,0,0,.6)}
     .grid{display:grid; gap:10px; grid-template-columns: repeat(12,1fr)}
-    .span6{grid-column: span 6}
-    .span8{grid-column: span 8}
-    .span12{grid-column: 1 / -1}
+    .span6{grid-column: span 6} .span8{grid-column: span 8} .span12{grid-column: 1 / -1}
     .hints{font-size:12px; color:var(--muted)}
+
+    /* ---------- Poster Layouts ---------- */
+
+    .poster-grid{position:relative; width:100%; height:100%; display:grid;}
+
+    /* Panels/chips/footers are FULLY transparent (no fill, no border) */
+    .panel{ background:transparent; border:none; border-radius:14px; padding:14px; height:100%; overflow:hidden; }
+    .top-chip{ background:transparent; border:none; border-radius:12px; padding:10px 14px; display:inline-grid; grid-auto-flow:column; gap:14px; }
+    .footer{ background:transparent; border:none; border-radius:14px; padding:12px 16px; min-width:62%; }
+
+    /* Sidebar Left — transparent card shell */
+    .card.poster-sidebar{ padding:16px; background:transparent; border-color:transparent; }
+    .card.poster-sidebar .poster-grid{
+      grid-template-columns: 280px 1fr; grid-template-rows: 1fr; column-gap:16px; height:100%;
+    }
+
+    /* Split Sides — transparent card shell */
+    .card.poster-split{ padding:16px; background:transparent; border-color:transparent; }
+    .card.poster-split .poster-grid{
+      grid-template-columns: 280px 1fr 280px;    /* rails + middle */
+      grid-template-rows: auto 1fr auto;        /* top chip | body | footer */
+      row-gap: 12px; column-gap: 16px; height:100%;
+    }
+    /* Split footer sits only in the center column to avoid rail overlap */
+    .card.poster-split .footer{ grid-column:2; grid-row:3; justify-self:center; }
+    .card.poster-split .top-chip{ grid-column:2; grid-row:1; justify-self:center; align-self:start; }
 
     @media (max-width:840px){
       .toolbar .block{grid-column: span 6}
@@ -130,6 +146,8 @@
             <option value="standard">Standard</option>
             <option value="compact">Compact</option>
             <option value="borderless">Borderless / Transparent</option>
+            <option value="poster-sidebar">Poster: Sidebar Left</option>
+            <option value="poster-split">Poster: Split Sides</option>
           </select>
         </div>
         <div class="block">
@@ -144,6 +162,10 @@
         <div class="block">
           <label>&nbsp;</label>
           <button id="exportAll" title="Export all cards as transparent PNGs">Export All PNGs</button>
+        </div>
+        <div class="block">
+          <label>&nbsp;</label>
+          <button id="downloadPage" title="Save this dashboard as a single HTML file">Download .html</button>
         </div>
         <div class="block">
           <label>&nbsp;</label>
@@ -245,6 +267,7 @@
     const layoutStyleEl = document.getElementById('layoutStyle');
     const sortByEl = document.getElementById('sortBy');
     const exportAllBtn = document.getElementById('exportAll');
+    const downloadPageBtn = document.getElementById('downloadPage');
     const submitterEl = document.getElementById('submitter');
     const titleEl = document.getElementById('title');
     const artistEl = document.getElementById('artist');
@@ -264,14 +287,14 @@
     let songs = [];
     let ranksMap = new Map(); // song.id -> rank
 
-    // Tie-breaking (random order for ties)
-    let tieBreakers = new Map();  // song.id -> random number for current render
+    // Tie-breaking
+    let tieBreakers = new Map();
     const EPS = 1e-6;
     function refreshTieBreakers(){
       tieBreakers = new Map(songs.map(s => [s.id, Math.random()]));
     }
 
-    /** Utilities */
+    /* utils */
     const uid = () => Math.random().toString(36).slice(2,9);
     const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
     const sanitizeFilename = (s) => s.replace(/[\/:*?"<>|]/g,'_').slice(0,80);
@@ -280,12 +303,8 @@
     function norm(s){return (s||'').toString().trim();}
     function lc(s){return norm(s).toLowerCase();}
     const RESERVED_HEADERS = new Set(['song','title','artist','submitter','average']);
-    function isBlankScore(v){
-      const t = lc(v);
-      return t==='' || t==='/' || t==='na' || t==='n/a' || t==='–' || t==='—' || t==='nil';
-    }
+    function isBlankScore(v){ const t = lc(v); return t===''||t==='/'||t==='na'||t==='n/a'||t==='–'||t==='—'||t==='nil'; }
 
-    // Parse a score cell that may have a trailing star (favorite) like "9.4*", "10 ★", or "8.75 *"
     function parseScoreCell(raw){
       const txt = (raw || '').toString().trim();
       const favorite = /[*★]/.test(txt);
@@ -302,7 +321,6 @@
       return img;
     }
 
-    // Fit text to a single line by shrinking font-size (down to a min)
     function shrinkToFit(el, minPx=10){
       const style = getComputedStyle(el);
       const base = parseFloat(style.fontSize) || 18;
@@ -349,7 +367,7 @@
         const clearBtn = document.createElement('button'); clearBtn.textContent='🗑'; clearBtn.type='button'; clearBtn.title='Remove avatar'; clearBtn.style.width='42px';
         clearBtn.addEventListener('click', ()=>{ delete photos[roster[i]]; refreshAllCards(); renderRosterInputs(); rebuildScoreInputs(); });
 
-        const removeBtn = document.createElement('button'); removeBtn.textContent='✕'; removeBtn.type='button'; removeBtn.style.width='42px';
+        const removeBtn = document.createElement('button'); removeBtn.textContent='✕'; removeBtn.type='button'; removeBtn.title='Remove person'; removeBtn.style.width='42px';
         removeBtn.addEventListener('click', ()=>{
           delete photos[roster[i]];
           roster.splice(i,1);
@@ -401,9 +419,7 @@
 
         const inp = document.createElement('input');
         inp.type='number'; inp.step='0.01'; inp.placeholder='score'; inp.dataset.person = who;
-        if(isSubmitter){
-          inp.disabled = true; inp.title = 'Submitter cannot score their own song';
-        }
+        if(isSubmitter){ inp.disabled = true; inp.title = 'Submitter cannot score their own song'; }
 
         const row = document.createElement('div');
         row.style.display='grid';
@@ -411,8 +427,7 @@
         row.style.alignItems='center';
         row.style.gap='8px';
 
-        const scoreWrap = document.createElement('div');
-        scoreWrap.className='score-cell';
+        const scoreWrap = document.createElement('div'); scoreWrap.className='score-cell';
         scoreWrap.appendChild(inp);
 
         row.appendChild(left);
@@ -458,58 +473,25 @@
       return {maxNames, minNames};
     }
 
-    function clearEmptyState(){
-      const es = document.getElementById('emptyState'); if(es) es.remove();
-    }
+    function clearEmptyState(){ const es = document.getElementById('emptyState'); if(es) es.remove(); }
 
-    // Ranking helpers
     function sortByRanking(a,b){
       const diff = (b.avg) - (a.avg);
       if (Math.abs(diff) > EPS) return diff;
-      // tie → random (stable within a render)
       return (tieBreakers.get(a.id) ?? 0) - (tieBreakers.get(b.id) ?? 0);
     }
-// Fisher–Yates shuffle
-function shuffle(arr){
-  for (let i = arr.length - 1; i > 0; i--){
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-function assignRanks(){
-  // sort by avg high→low first
-  const sorted = [...songs].sort((a,b)=> (b.avg)-(a.avg));
-  const eps = 1e-6;
-
-  // group songs with (nearly) identical avgs
-  const groups = [];
-  let cur = [];
-  for (const s of sorted){
-    if (!cur.length || Math.abs(s.avg - cur[0].avg) <= eps){
-      cur.push(s);
-    } else {
-      groups.push(cur);
-      cur = [s];
+    function shuffle(arr){ for (let i = arr.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+    function assignRanks(){
+      const sorted = [...songs].sort((a,b)=> (b.avg)-(a.avg));
+      const eps = 1e-6, groups = []; let cur = [];
+      for (const s of sorted){
+        if (!cur.length || Math.abs(s.avg - cur[0].avg) <= eps) cur.push(s);
+        else { groups.push(cur); cur = [s]; }
+      }
+      if (cur.length) groups.push(cur);
+      const ordered = []; for (const g of groups){ shuffle(g); ordered.push(...g); }
+      ranksMap = new Map(); ordered.forEach((s, idx)=>{ ranksMap.set(s.id, idx + 1); }); songs = ordered;
     }
-  }
-  if (cur.length) groups.push(cur);
-
-  // shuffle inside each tie group, then concatenate
-  const ordered = [];
-  for (const g of groups){
-    shuffle(g);
-    ordered.push(...g);
-  }
-
-  // assign consecutive ranks based on the new order
-  ranksMap = new Map();
-  ordered.forEach((s, idx)=>{ ranksMap.set(s.id, idx + 1); });
-
-  // make the display order match the randomized tie-break order
-  songs = ordered;
-}
 
     function placeText(n){
       const s = String(n);
@@ -527,38 +509,181 @@ function assignRanks(){
     }
 
     function rerenderCards(){
-      cardsEl.innerHTML = '';
-      clearEmptyState();
+      cardsEl.innerHTML = ''; clearEmptyState();
       sortByEl.value = 'avg_desc';
-      refreshTieBreakers();                // randomize ties this render
-      songs.sort(sortByRanking);
-      assignRanks();
+      refreshTieBreakers(); songs.sort(sortByRanking); assignRanks();
       songs.forEach(song=> cardsEl.appendChild(renderCard(song)));
       document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
     }
 
     function refreshAllCards(){
-      refreshTieBreakers();                // randomize ties when data changed
-      songs.sort(sortByRanking); 
-      assignRanks();
+      refreshTieBreakers(); songs.sort(sortByRanking); assignRanks();
       document.querySelectorAll('.card').forEach(card=>{
-        const id = card.dataset.id;
-        const song = songs.find(s=>s.id===id);
+        const id = card.dataset.id; const song = songs.find(s=>s.id===id);
         if(song){ card.replaceWith(renderCard(song)); }
       });
       document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
     }
 
-    function renderCard(song){
+    /* ---------- Poster render helpers ---------- */
+    function buildScoresList(names, song, extraClass=''){
       const {maxNames, minNames} = getExtrema(song.scores);
+      const wrap = document.createElement('div');
+      wrap.className = `scores ${extraClass}`.trim();
+
+      names.forEach(person=>{
+        const rowL = document.createElement('div');
+        const badge = document.createElement('div'); badge.className='badge';
+        const img = personAvatarEl(person);
+        const nameSpan = document.createElement('span'); nameSpan.className='name'; nameSpan.textContent = person;
+        badge.appendChild(img); badge.appendChild(nameSpan);
+
+        const isSubmitter = (person && song.submitter && person.trim().toLowerCase()===song.submitter.trim().toLowerCase());
+        if(isSubmitter){
+          const m=document.createElement('span'); m.className='markSubmitter'; m.title='Submitter'; m.textContent='Submitter';
+          badge.appendChild(m);
+        }
+        rowL.appendChild(badge);
+
+        const rowR = document.createElement('div'); rowR.className='score-cell';
+
+        const isFav = !!(song.favorites && song.favorites[person]);
+        if(isFav){ const star = document.createElement('span'); star.className = 'favStar'; star.textContent = '★'; rowR.appendChild(star); }
+
+        const sv = document.createElement('span'); sv.className='score';
+        if(isSubmitter) sv.textContent = '—';
+        else {
+          const val = song.scores[person];
+          sv.textContent = (val===undefined||val==='')? '—' : String(val);
+          if(maxNames.has(person)) sv.classList.add('high');
+          if(minNames.has(person)) sv.classList.add('low');
+        }
+        rowR.appendChild(sv);
+
+        wrap.appendChild(rowL); wrap.appendChild(rowR);
+      });
+
+      return wrap;
+    }
+
+    function renderPosterSidebar(song, color, rank){
+      const card = document.createElement('article');
+      card.className = 'card poster-sidebar';
+      card.dataset.id = song.id;
+      card.dataset.rank = String(rank);
+
+      const grid = document.createElement('div'); grid.className = 'poster-grid'; card.appendChild(grid);
+
+      // Left transparent panel (full height)
+      const panel = document.createElement('div');
+      panel.className = 'panel';
+      panel.style.gridColumn = '1';
+      panel.style.gridRow = '1 / -1';
+      grid.appendChild(panel);
+
+      const t = document.createElement('div'); t.className='title'; t.textContent = song.title; t.style.color = color;
+      const a = document.createElement('div'); a.className='artist'; a.textContent = song.artist; a.style.color = color;
+      panel.appendChild(t); panel.appendChild(a);
+
+      const chip = document.createElement('div'); chip.className='hero chips';
+      const rankEl = document.createElement('div'); rankEl.className='rank'; rankEl.textContent = 'Ranking: ' + placeText(rank); rankEl.style.color = color;
+      const avgEl = document.createElement('div'); avgEl.className='avgnum'; avgEl.textContent = 'Average: ' + (Number.isFinite(song.avg)? song.avg.toFixed(2) : '—'); avgEl.style.color = color;
+      chip.appendChild(rankEl); chip.appendChild(avgEl);
+      panel.appendChild(chip);
+
+      const lbl = document.createElement('div'); lbl.className='posterScoresLabel'; lbl.textContent = 'Scores';
+      panel.appendChild(lbl);
+      panel.appendChild(buildScoresList(roster, song, 'rail-scores'));
+
+      // Right column spacer (keeps 16:9 grid)
+      const spacer = document.createElement('div'); spacer.style.gridColumn = '2'; spacer.style.gridRow = '1 / -1'; grid.appendChild(spacer);
+
+      const actions = document.createElement('div'); actions.className='card-actions';
+      const dl = document.createElement('button'); dl.textContent = 'Export PNG'; dl.type='button';
+      dl.addEventListener('click', ()=> downloadCardPNG(card, `${rank} (${sanitizeFilename(song.title)}).png`) );
+      const del = document.createElement('button'); del.textContent = 'Delete'; del.type='button';
+      del.addEventListener('click', ()=>{ songs = songs.filter(s=>s.id!==song.id); rerenderCards(); if(!songs.length){ showEmpty(); } });
+      actions.appendChild(dl); actions.appendChild(del);
+      card.appendChild(actions);
+
+      return card;
+    }
+
+    function renderPosterSplit(song, color, rank){
+      const card = document.createElement('article');
+      card.className = 'card poster-split';
+      card.dataset.id = song.id;
+      card.dataset.rank = String(rank);
+
+      const grid = document.createElement('div'); grid.className = 'poster-grid'; card.appendChild(grid);
+
+      const half = Math.ceil(roster.length / 2);
+      const leftNames = roster.slice(0, half);
+      const rightNames = roster.slice(half);
+
+      // LEFT RAIL (span all rows)
+      const leftRail = document.createElement('div');
+      leftRail.className='panel';
+      leftRail.style.gridColumn = '1';
+      leftRail.style.gridRow = '1 / -1';
+      leftRail.appendChild((()=>{ const lbl=document.createElement('div'); lbl.className='posterScoresLabel'; lbl.textContent='Scores'; return lbl;})());
+      leftRail.appendChild(buildScoresList(leftNames, song, 'rail-scores'));
+      grid.appendChild(leftRail);
+
+      // TOP CENTER CHIP (center column only)
+      const top = document.createElement('div'); top.className='top-chip';
+      const r = document.createElement('div'); r.className='rank'; r.textContent = 'Ranking'; r.style.color = color;
+      const rnum = document.createElement('div'); rnum.className='rank'; rnum.textContent = placeText(rank); rnum.style.color = color; rnum.style.fontWeight='800';
+      const a = document.createElement('div'); a.className='avgnum'; a.textContent = 'Average'; a.style.color = color;
+      const anum = document.createElement('div'); anum.className='avgnum'; anum.textContent = Number.isFinite(song.avg)? song.avg.toFixed(2) : '—'; anum.style.color = color; anum.style.fontWeight='800';
+      top.appendChild(r); top.appendChild(rnum); top.appendChild(a); top.appendChild(anum);
+      top.style.gridColumn = '2'; top.style.gridRow = '1'; top.style.justifySelf='center'; top.style.alignSelf='start';
+      grid.appendChild(top);
+
+      // RIGHT RAIL (span all rows)
+      const rightRail = document.createElement('div');
+      rightRail.className='panel';
+      rightRail.style.gridColumn = '3';
+      rightRail.style.gridRow = '1 / -1';
+      rightRail.appendChild((()=>{ const lbl=document.createElement('div'); lbl.className='posterScoresLabel'; lbl.textContent='Scores'; return lbl;})());
+      rightRail.appendChild(buildScoresList(rightNames, song, 'rail-scores'));
+      grid.appendChild(rightRail);
+
+      // FOOTER (bottom, center column only)
+      const footer = document.createElement('div'); footer.className='footer';
+      const ft = document.createElement('div'); ft.className='title'; ft.textContent = song.title; ft.style.color = color;
+      const fa = document.createElement('div'); fa.className='artist'; fa.textContent = song.artist; fa.style.color = color;
+      footer.appendChild(ft); footer.appendChild(fa);
+      footer.style.gridColumn = '2'; footer.style.gridRow = '3'; footer.style.justifySelf='center';
+      grid.appendChild(footer);
+
+      const actions = document.createElement('div'); actions.className='card-actions';
+      const dl = document.createElement('button'); dl.textContent = 'Export PNG'; dl.type='button';
+      dl.addEventListener('click', ()=> downloadCardPNG(card, `${rank} (${sanitizeFilename(song.title)}).png`) );
+      const del = document.createElement('button'); del.textContent = 'Delete'; del.type='button';
+      del.addEventListener('click', ()=>{ songs = songs.filter(s=>s.id!==song.id); rerenderCards(); if(!songs.length){ showEmpty(); } });
+      actions.appendChild(dl); actions.appendChild(del);
+      card.appendChild(actions);
+
+      return card;
+    }
+
+    function renderCard(song){
       const rank = ranksMap.get(song.id) ?? 0;
       const color = placementColor(rank);
+      const style = layoutStyleEl.value;
+
+      if(style === 'poster-sidebar') return renderPosterSidebar(song, color, rank);
+      if(style === 'poster-split')   return renderPosterSplit(song, color, rank);
+
+      /* standard card */
+      const {maxNames, minNames} = getExtrema(song.scores);
 
       const card = document.createElement('article');
       card.className = 'card';
       card.dataset.id = song.id;
+      card.dataset.rank = String(rank);
 
-      const style = layoutStyleEl.value;
       card.classList.toggle('compact', style==='compact');
       card.classList.toggle('borderless', style==='borderless');
 
@@ -576,32 +701,20 @@ function assignRanks(){
       roster.forEach(person=>{
         const rowL = document.createElement('div');
         const badge = document.createElement('div'); badge.className='badge';
-
         const img = personAvatarEl(person);
         const nameSpan = document.createElement('span'); nameSpan.className='name'; nameSpan.textContent = person;
-        badge.appendChild(img);
-        badge.appendChild(nameSpan);
+        badge.appendChild(img); badge.appendChild(nameSpan);
 
         const isSubmitter = (person && song.submitter && person.trim().toLowerCase()===song.submitter.trim().toLowerCase());
-        if(isSubmitter){
-          const m=document.createElement('span'); m.className='markSubmitter'; m.title='Submitter'; m.textContent='Submitter'; badge.appendChild(m);
-        }
+        if(isSubmitter){ const m=document.createElement('span'); m.className='markSubmitter'; m.title='Submitter'; m.textContent='Submitter'; badge.appendChild(m); }
         rowL.appendChild(badge);
 
         const rowR = document.createElement('div'); rowR.className='score-cell';
-
-        // Favorite star (from CSV import)
         const isFav = !!(song.favorites && song.favorites[person]);
-        if(isFav){
-          const star = document.createElement('span');
-          star.className = 'favStar';
-          star.textContent = '★';
-          rowR.appendChild(star);
-        }
-
+        if(isFav){ const star=document.createElement('span'); star.className='favStar'; star.textContent='★'; rowR.appendChild(star); }
         const sv = document.createElement('span'); sv.className='score';
-        if(isSubmitter) sv.textContent = '—';
-        else {
+        if(isSubmitter) sv.textContent='—';
+        else{
           const val = song.scores[person];
           sv.textContent = (val===undefined||val==='')? '—' : String(val);
           if(maxNames.has(person)) sv.classList.add('high');
@@ -609,14 +722,13 @@ function assignRanks(){
         }
         rowR.appendChild(sv);
 
-        scoresWrap.appendChild(rowL);
-        scoresWrap.appendChild(rowR);
+        scoresWrap.appendChild(rowL); scoresWrap.appendChild(rowR);
       });
       card.appendChild(scoresWrap);
 
       const actions = document.createElement('div'); actions.className='card-actions';
       const dl = document.createElement('button'); dl.textContent = 'Export PNG'; dl.type='button';
-      dl.addEventListener('click', ()=> downloadCardPNG(card, `${sanitizeFilename(song.title)}.png`));
+      dl.addEventListener('click', ()=> downloadCardPNG(card, `${rank} (${sanitizeFilename(song.title)}).png`) );
       const del = document.createElement('button'); del.textContent = 'Delete'; del.type='button';
       del.addEventListener('click', ()=>{ songs = songs.filter(s=>s.id!==song.id); rerenderCards(); if(!songs.length){ showEmpty(); } });
       actions.appendChild(dl); actions.appendChild(del);
@@ -625,12 +737,9 @@ function assignRanks(){
       return card;
     }
 
-    function showEmpty(){
-      const div = document.createElement('div'); div.className='empty'; div.id='emptyState'; div.textContent='No songs yet — add one above ✨';
-      cardsEl.appendChild(div);
-    }
+    function showEmpty(){ const div = document.createElement('div'); div.className='empty'; div.id='emptyState'; div.textContent='No songs yet — add one above ✨'; cardsEl.appendChild(div); }
 
-    // Export helpers (hide buttons while exporting)
+    // Export helpers (transparent PNGs)
     async function downloadCardPNG(cardEl, filename){
       const actions = cardEl.querySelector('.card-actions');
       const prevDisplay = actions ? actions.style.display : '';
@@ -653,36 +762,26 @@ function assignRanks(){
       const cards = [...document.querySelectorAll('.card')];
       for(const c of cards){
         const title = c.querySelector('.title')?.textContent?.trim() || 'song';
-        await downloadCardPNG(c, `${sanitizeFilename(title)}.png`);
+        const rank = c.dataset.rank ? parseInt(c.dataset.rank,10) : 0;
+        const fname = `${rank} (${sanitizeFilename(title)}).png`;
+        await downloadCardPNG(c, fname);
       }
     });
 
-    layoutStyleEl.addEventListener('change', ()=>{
-      document.querySelectorAll('.card').forEach(c=>{
-        c.classList.toggle('compact', layoutStyleEl.value==='compact');
-        c.classList.toggle('borderless', layoutStyleEl.value==='borderless');
-      });
-    });
+    layoutStyleEl.addEventListener('change', ()=>{ rerenderCards(); });
 
     sortByEl.addEventListener('change', ()=>{
-      if(sortByEl.value === 'avg_desc'){
-        rerenderCards();
-      } else {
+      if(sortByEl.value === 'avg_desc'){ rerenderCards(); }
+      else{
         const val = sortByEl.value;
-        refreshTieBreakers(); // randomize ties for this sort run
+        refreshTieBreakers();
         const fn = (a,b)=>{
           let diff;
-          if(val==='avg_asc'){
-            diff = (a.avg) - (b.avg);
-          } else if(val==='title_asc'){
-            diff = a.title.localeCompare(b.title, undefined, {sensitivity:'base'});
-          } else if(val==='artist_asc'){
-            diff = a.artist.localeCompare(b.artist, undefined, {sensitivity:'base'});
-          } else {
-            diff = (b.avg) - (a.avg);
-          }
+          if(val==='avg_asc') diff = (a.avg) - (b.avg);
+          else if(val==='title_asc') diff = a.title.localeCompare(b.title, undefined, {sensitivity:'base'});
+          else if(val==='artist_asc') diff = a.artist.localeCompare(b.artist, undefined, {sensitivity:'base'});
+          else diff = (b.avg) - (a.avg);
           if (diff !== 0 && !Number.isNaN(diff)) return diff;
-          // tie → random order
           return (tieBreakers.get(a.id) ?? 0) - (tieBreakers.get(b.id) ?? 0);
         };
         songs.sort(fn);
@@ -707,8 +806,6 @@ function assignRanks(){
       });
 
       const avg = Number.isFinite(avgOverride) ? avgOverride : computeAverage(scores);
-
-      // manual add: favorites empty so renderer has consistent shape
       addSong({ id: uid(), title, artist, submitter, scores, favorites: {}, avg });
       songForm.reset(); rebuildScoreInputs();
     });
@@ -717,18 +814,15 @@ function assignRanks(){
       songForm.reset(); rebuildScoreInputs();
     });
 
-    // ===== Bulk import logic =====
+    /* ===== Bulk import ===== */
     function autoDelimiter(sample){
       if(delimiterEl.value !== 'auto') return delimiterEl.value;
       const counts = [',','\t',';'].map(d=>({d, c:(sample.match(new RegExp(d==='\t'?'\\t':d,'g'))||[]).length}))
         .sort((a,b)=>b.c-a.c);
       return (counts[0]?.c>0)? counts[0].d : '\t';
     }
-
-    // Basic CSV parser with quotes support
     function parseCSV(text, delim){
-      const out = [];
-      let row = [], val = '', inQuotes = false;
+      const out = []; let row = [], val = '', inQuotes = false;
       for(let i=0;i<text.length;i++){
         const ch = text[i];
         if(inQuotes){
@@ -744,40 +838,24 @@ function assignRanks(){
         val += ch;
       }
       row.push(val); out.push(row);
-      // trim trailing empty row if present
       if(out.length && out[out.length-1].every(c=>c==='')) out.pop();
       return out;
     }
-
-    function headersToMap(headers){
-      const map = {};
-      headers.forEach((h,idx)=>{ map[lc(h)] = idx; });
-      return map;
-    }
-
+    function headersToMap(headers){ const map = {}; headers.forEach((h,idx)=>{ map[lc(h)] = idx; }); return map; }
     function matchRosterHeader(h){
       const key = lc(h);
-      // try exact (case-insensitive) first
       let exact = roster.find(r => lc(r) === key);
       if(exact) return exact;
-      // try relaxed: remove punctuation/spaces
       const relax = key.replace(/[^a-z0-9]/g,'');
       exact = roster.find(r => lc(r).replace(/[^a-z0-9]/g,'') === relax);
       return exact || null;
     }
-
     function importRows(rows, hasHeader){
       if(!rows.length) return 0;
-      let headers = [];
-      let dataRows = rows;
+      let headers = [], dataRows = rows;
 
-      if(hasHeader){
-        headers = rows[0];
-        dataRows = rows.slice(1);
-      } else {
-        // create positional headers as fallback
-        headers = ['song','artist','submitter', ...roster];
-      }
+      if(hasHeader){ headers = rows[0]; dataRows = rows.slice(1); }
+      else { headers = ['song','artist','submitter', ...roster]; }
 
       const hmap = headersToMap(headers);
       const titleIdx = hmap['song'] ?? hmap['title'] ?? 0;
@@ -785,21 +863,14 @@ function assignRanks(){
       const submitterIdx = hmap['submitter'] ?? 2;
       const averageIdx = hmap['average'];
 
-      // Discover score columns -> map to roster names; auto-extend roster for new names
-      const scoreCols = [];
-      const newScorers = [];
+      const scoreCols = []; const newScorers = [];
       headers.forEach((h,idx)=>{
         if(idx===titleIdx || idx===artistIdx || idx===submitterIdx || idx===averageIdx) return;
         const headerName = norm(h);
         if(!headerName || RESERVED_HEADERS.has(lc(headerName))) return;
         const who = matchRosterHeader(headerName);
-        if(who){
-          scoreCols.push({idx, who});
-        } else {
-          // add as new scorer
-          newScorers.push(headerName);
-          scoreCols.push({idx, who: headerName});
-        }
+        if(who){ scoreCols.push({idx, who}); }
+        else { newScorers.push(headerName); scoreCols.push({idx, who: headerName}); }
       });
 
       if(newScorers.length){
@@ -810,25 +881,18 @@ function assignRanks(){
 
       let added = 0;
       dataRows.forEach(r=>{
-        const title = norm(r[titleIdx]);
-        const artist = norm(r[artistIdx]);
-        const submitter = norm(r[submitterIdx]);
-        if(!title) return; // skip blanks
-        const scores = {};
-        const favorites = {}; // { [person]: true } when that person starred the song
+        const title = norm(r[titleIdx]); const artist = norm(r[artistIdx]); const submitter = norm(r[submitterIdx]);
+        if(!title) return;
+        const scores = {}; const favorites = {};
         scoreCols.forEach(sc=>{
           const raw = norm(r[sc.idx]);
-          if(isBlankScore(raw)) return;
+          if(raw==='' || isBlankScore(raw)) return;
           const { num, favorite } = parseScoreCell(raw);
-          if(Number.isFinite(num)) {
-            scores[sc.who] = num;
-            if(favorite) favorites[sc.who] = true;
-          }
+          if(Number.isFinite(num)) { scores[sc.who] = num; if(favorite) favorites[sc.who] = true; }
         });
         let avg = computeAverage(scores);
         if(averageIdx!==undefined){
-          const rawAvg = parseFloat(r[averageIdx]);
-          if(Number.isFinite(rawAvg)) avg = rawAvg;
+          const rawAvg = parseFloat(r[averageIdx]); if(Number.isFinite(rawAvg)) avg = rawAvg;
         }
         addSong({ id: uid(), title, artist, submitter, scores, favorites, avg });
         added++;
@@ -837,10 +901,7 @@ function assignRanks(){
     }
 
     openBulkBtn.addEventListener('click', ()=>{
-      bulkText.value = '';
-      hasHeaderEl.value = 'yes';
-      delimiterEl.value = 'auto';
-      bulkDialog.showModal();
+      bulkText.value = ''; hasHeaderEl.value = 'yes'; delimiterEl.value = 'auto'; bulkDialog.showModal();
     });
     cancelBulkBtn.addEventListener('click', ()=> bulkDialog.close());
 
@@ -854,6 +915,40 @@ function assignRanks(){
       bulkDialog.close();
       if(added===0) alert('No rows imported. Check your headers: song, artist, submitter, and columns named after roster members. You can add * after a score to mark it as a favorite.');
     });
+
+    /* Save a self-contained HTML snapshot */
+    function buildSnapshotHTML(){
+      const snapshot = { roster, photos, songs, layout: layoutStyleEl.value, sortBy: sortByEl.value };
+      const injector =
+`<script id="snapshot-applier">
+  (function(){
+    try{
+      var snap = ${JSON.stringify(snapshot)};
+      window.addEventListener('DOMContentLoaded', function(){
+        try { roster = snap.roster || []; } catch(e){}
+        try { photos = snap.photos || {}; } catch(e){}
+        try { songs = snap.songs || []; } catch(e){}
+        try { document.getElementById('layoutStyle').value = snap.layout || 'standard'; } catch(e){}
+        try { document.getElementById('sortBy').value = snap.sortBy || 'avg_desc'; } catch(e){}
+        try { document.getElementById('peopleCount').value = roster.length; } catch(e){}
+        try { renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); rerenderCards(); } catch(e){}
+      });
+    }catch(err){ console.error('Snapshot load failed', err); }
+  })();
+<\/script>`;
+      const html = document.documentElement.outerHTML.replace('</body>', injector + '\n</body>');
+      return html;
+    }
+    function downloadSnapshot(){
+      const html = buildSnapshotHTML();
+      const blob = new Blob([html], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'song-scoring-dashboard.html';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+    downloadPageBtn.addEventListener('click', downloadSnapshot);
 
     // init
     renderRosterInputs();
