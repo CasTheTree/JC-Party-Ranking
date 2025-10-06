@@ -118,6 +118,49 @@
     .card.poster-split .footer{ grid-column:2; grid-row:3; justify-self:center; }
     .card.poster-split .top-chip{ grid-column:2; grid-row:1; justify-self:center; align-self:start; }
 
+    /* ===== People Stats ===== */
+    .stats-card{
+      position:relative; background:var(--card); border:1px solid var(--ring); border-radius:18px; padding:16px;
+    }
+    .stats-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:18px}
+    .stats-title{font-weight:800; font-size:18px}
+    .stats-wrap{display:grid; grid-template-columns: 1.1fr 1fr; gap:16px; margin-top:12px}
+    .stats-chart{
+      border:1px dashed var(--ring); border-radius:14px; padding:12px; overflow:auto; background:transparent;
+    }
+    .stats-table{
+      border:1px dashed var(--ring); border-radius:14px; overflow:auto;
+    }
+    table{width:100%; border-collapse:collapse; font-size:14px}
+    th, td{padding:8px 10px; border-bottom:1px solid var(--ring); text-align:left; white-space:nowrap}
+    th{font-size:12px; color:var(--muted); position:sticky; top:0; background:linear-gradient(180deg,#101014,#0b0b0c);}
+    .pill{font-variant-numeric:tabular-nums; font-weight:800}
+    .pill.green{color:var(--green)} .pill.red{color:var(--red)}
+    .rank-badge{font-weight:900}
+    .chart-row{display:flex; align-items:center; gap:10px; margin:6px 0}
+    .chart-name{width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:var(--muted)}
+    .chart-bar-wrap{flex:1; height:22px; border-radius:8px; background:linear-gradient(180deg,#111114,#0f0f12); border:1px solid var(--ring); position:relative}
+    .chart-bar{height:100%; border-radius:8px; background:linear-gradient(180deg,#2563eb,#1d4ed8)}
+    .chart-val{position:absolute; right:6px; top:0; bottom:0; display:flex; align-items:center; font-variant-numeric:tabular-nums; font-weight:800}
+    .export-row{display:flex; gap:8px}
+	.chart-bar.best{ background: var(--green) !important; }
+	.chart-bar.worst{ background: var(--red) !important; }
+	/* Affinity numeric cells (no bars) */
+	.aff-num{ font-variant-numeric: tabular-nums; font-weight:800 }
+	.aff-num.best{ color: var(--green); }
+	.aff-num.worst{ color: var(--red); }
+
+	/* Gold highlight for "Favorited" leaders */
+	.pill.gold{ color: var(--gold); }
+
+	/* Tiny avatars in stats tables */
+	.stats-table .avatar{ width:22px; height:22px; border-radius:6px; }
+
+
+    @media (max-width:980px){
+      .stats-wrap{grid-template-columns:1fr}
+    }
+
     @media (max-width:840px){
       .toolbar .block{grid-column: span 6}
       .toolbar .block.wide{grid-column: 1 / -1}
@@ -210,7 +253,54 @@
   </header>
 
   <main class="container" style="padding-top:6px; padding-bottom:40px">
-    <section id="cards" class="cards" aria-live="polite">
+    <!-- ===== People Stats (Exportable) ===== -->
+    <section id="peopleStats" class="stats-card" aria-live="polite">
+      <div class="stats-head">
+        <div class="stats-title">👤 People Stats — Ranking by Avg (received)</div>
+		<div class="export-row">
+		  <label for="statsColor" class="name" style="align-self:center">Graph color</label>
+		  <select id="statsColor" style="width:auto">
+			<option value="blue" selected>Blue</option>
+			<option value="green">Green</option>
+			<option value="red">Red</option>
+			<option value="purple">Purple</option>
+			<option value="pink">Pink</option>
+			<option value="gold">Gold</option>
+			<option value="gray">Gray</option>
+		  </select>
+		  <button id="exportStatsChart" title="Export chart as transparent PNG">Export Chart PNG</button>
+		  <button id="exportStatsPanel" title="Export entire stats panel as transparent PNG">Export Panel PNG</button>
+		</div>
+      </div>
+      <div class="stats-wrap" id="statsWrap">
+        <div class="stats-chart" id="statsChart" aria-label="Ranking chart (higher is better)"></div>
+        <div class="stats-table" id="statsTable" aria-label="Per-person details"></div>
+      </div>
+    </section>
+	
+	<!-- ===== Affinity (Exportable) ===== -->
+	<section id="affinitySection" class="stats-card" aria-live="polite">
+	  <div class="stats-head">
+		<div class="stats-title">🤝 Affinity — who likes whose songs</div>
+		<div class="export-row">
+		  <button id="exportAffinity" title="Export as transparent PNG">Export Affinity PNG</button>
+		</div>
+	  </div>
+	  <div class="stats-table" id="affinityTable"></div>
+	</section>
+	
+	<!-- ===== Joint Affinity (Exportable) ===== -->
+	<section id="jointAffinitySection" class="stats-card" aria-live="polite">
+	  <div class="stats-head">
+		<div class="stats-title">🔗 Joint Affinity — average of A→B and B→A</div>
+		<div class="export-row">
+		  <button id="exportJointAffinity" type="button" title="Export as transparent PNG">Export Joint Affinity PNG</button>
+		</div>
+	  </div>
+	  <div class="stats-table" id="jointAffinityTable"></div>
+	</section>
+
+    <section id="cards" class="cards" aria-live="polite" style="margin-top:18px">
       <div class="empty" id="emptyState">No songs yet — add one above ✨</div>
     </section>
   </main>
@@ -271,6 +361,30 @@
     const submitterEl = document.getElementById('submitter');
     const titleEl = document.getElementById('title');
     const artistEl = document.getElementById('artist');
+
+    // Stats panel elements
+    const statsChartEl = document.getElementById('statsChart');
+    const statsTableEl = document.getElementById('statsTable');
+    const exportStatsChartBtn = document.getElementById('exportStatsChart');
+    const exportStatsPanelBtn = document.getElementById('exportStatsPanel');
+    const statsSectionEl = document.getElementById('peopleStats');
+	
+	const statsColorEl = document.getElementById('statsColor');
+	let statsColor = statsColorEl?.value || 'blue';
+	statsColorEl?.addEventListener('change', () => {
+	  statsColor = statsColorEl.value;
+	  renderPeopleStats();
+	});
+
+	// Affinity elements
+	const affinitySectionEl = document.getElementById('affinitySection');
+	const affinityTableEl = document.getElementById('affinityTable');
+	const exportAffinityBtn = document.getElementById('exportAffinity');
+	
+	// Joint Affinity elements
+	const jointAffinitySectionEl = document.getElementById('jointAffinitySection');
+	const jointAffinityTableEl = document.getElementById('jointAffinityTable');
+	const exportJointAffinityBtn = document.getElementById('exportJointAffinity');
 
     // Bulk dialog
     const bulkDialog = document.getElementById('bulkDialog');
@@ -338,6 +452,7 @@
     });
     window.addEventListener('resize', () => {
       document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(shrinkToFit);
+      renderPeopleStats(); renderAffinity(); // keep bar widths responsive
     });
 
     function renderRosterInputs(){
@@ -353,7 +468,7 @@
           if(photos[oldName] && !photos[newName]) photos[newName] = photos[oldName];
           if(oldName !== newName){ delete photos[oldName]; }
           roster[i] = newName;
-          rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderRosterInputs();
+          rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderRosterInputs(); renderPeopleStats(); renderAffinity();
         });
 
         const uploadBtn = document.createElement('input');
@@ -361,18 +476,18 @@
         uploadBtn.addEventListener('change', async ()=>{
           const file = uploadBtn.files?.[0]; if(!file) return;
           const dataUrl = await readImageAsDataURL(file);
-          photos[roster[i]] = dataUrl; refreshAllCards(); renderRosterInputs(); rebuildScoreInputs();
+          photos[roster[i]] = dataUrl; refreshAllCards(); renderRosterInputs(); rebuildScoreInputs(); renderPeopleStats(); renderAffinity();
         });
 
         const clearBtn = document.createElement('button'); clearBtn.textContent='🗑'; clearBtn.type='button'; clearBtn.title='Remove avatar'; clearBtn.style.width='42px';
-        clearBtn.addEventListener('click', ()=>{ delete photos[roster[i]]; refreshAllCards(); renderRosterInputs(); rebuildScoreInputs(); });
+        clearBtn.addEventListener('click', ()=>{ delete photos[roster[i]]; refreshAllCards(); renderRosterInputs(); rebuildScoreInputs(); renderPeopleStats(); renderAffinity(); });
 
         const removeBtn = document.createElement('button'); removeBtn.textContent='✕'; removeBtn.type='button'; removeBtn.title='Remove person'; removeBtn.style.width='42px';
         removeBtn.addEventListener('click', ()=>{
           delete photos[roster[i]];
           roster.splice(i,1);
           peopleCountEl.value = roster.length;
-          renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards();
+          renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderPeopleStats(); renderAffinity();
         });
 
         const preview = personAvatarEl(name, 'lg');
@@ -449,7 +564,7 @@
         removed.forEach(name => delete photos[name]);
         roster.splice(n);
       }
-      renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards();
+      renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderPeopleStats(); renderAffinity();
     });
 
     function computeAverage(scores){
@@ -459,7 +574,7 @@
     }
 
     function addSong(data){
-      songs.push(data); rerenderCards();
+      songs.push(data); rerenderCards(); renderPeopleStats(); renderAffinity();
     }
 
     function getExtrema(scores){
@@ -507,6 +622,18 @@
       if(rank===3) return getComputedStyle(document.documentElement).getPropertyValue('--bronze').trim() || '#cd7f32';
       return getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#e8e8ea';
     }
+	
+	function chartGradient(color){
+	  switch(color){
+		case 'green':  return 'linear-gradient(180deg,#16a34a,#15803d)';
+		case 'red':    return 'linear-gradient(180deg,#dc2626,#b91c1c)';
+		case 'purple': return 'linear-gradient(180deg,#8b5cf6,#7c3aed)';
+		case 'pink':   return 'linear-gradient(180deg,#ec4899,#db2777)';
+		case 'gold':   return `linear-gradient(180deg,${getComputedStyle(document.documentElement).getPropertyValue('--gold').trim()||'#f5c542'},#d4a72c)`;
+		case 'gray':   return 'linear-gradient(180deg,#6b7280,#4b5563)';
+		default:       return 'linear-gradient(180deg,#2563eb,#1d4ed8)'; // blue
+	  }
+	}
 
     function rerenderCards(){
       cardsEl.innerHTML = ''; clearEmptyState();
@@ -713,7 +840,8 @@
         const isFav = !!(song.favorites && song.favorites[person]);
         if(isFav){ const star=document.createElement('span'); star.className='favStar'; star.textContent='★'; rowR.appendChild(star); }
         const sv = document.createElement('span'); sv.className='score';
-        if(isSubmitter) sv.textContent='—';
+        const isSubmitter2 = (person && song.submitter && person.trim().toLowerCase()===song.submitter.trim().toLowerCase());
+        if(isSubmitter2) sv.textContent='—';
         else{
           const val = song.scores[person];
           sv.textContent = (val===undefined||val==='')? '—' : String(val);
@@ -768,7 +896,7 @@
       }
     });
 
-    layoutStyleEl.addEventListener('change', ()=>{ rerenderCards(); });
+    layoutStyleEl.addEventListener('change', ()=>{ rerenderCards(); renderPeopleStats(); renderAffinity(); });
 
     sortByEl.addEventListener('change', ()=>{
       if(sortByEl.value === 'avg_desc'){ rerenderCards(); }
@@ -790,6 +918,7 @@
         songs.forEach(s=> cardsEl.appendChild(renderCard(s)));
         document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
       }
+      renderPeopleStats(); renderAffinity();
     });
 
     songForm.addEventListener('submit', (e)=>{
@@ -931,7 +1060,7 @@
         try { document.getElementById('layoutStyle').value = snap.layout || 'standard'; } catch(e){}
         try { document.getElementById('sortBy').value = snap.sortBy || 'avg_desc'; } catch(e){}
         try { document.getElementById('peopleCount').value = roster.length; } catch(e){}
-        try { renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); rerenderCards(); } catch(e){}
+        try { renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); rerenderCards(); renderPeopleStats(); renderAffinity(); } catch(e){}
       });
     }catch(err){ console.error('Snapshot load failed', err); }
   })();
@@ -950,11 +1079,450 @@
     }
     downloadPageBtn.addEventListener('click', downloadSnapshot);
 
+    /* ====== People Stats logic ====== */
+
+    // Compute per-person stats:
+    // - avgGiven: average of scores they gave (excluding songs they submitted)
+    // - greensGiven: count of times they were the max scorer on a song
+    // - redsGiven: count of times they were the min scorer on a song
+    // - submitAvg: average received for their submitted songs (song.avg)
+    // - submitRankAvg: average rank (1 = best) of their submitted songs
+	// Avg (given)  = average of scores a person gave to others (never their own songs)
+	// Avg (received) = average of ALL individual scores others gave to this person's submissions
+	// Favorited = total number of favorite marks their submissions received (counts multiples)
+	// Greens/Reds (given) = times they were the highest/lowest voter on any song
+	function computePeopleStats(){
+	  const base = {};
+	  roster.forEach(name=>{
+		base[name] = {
+		  name,
+		  givenVals: [],
+		  receivedVals: [],
+		  favMarksReceived: 0,
+		  greensGiven: 0,
+		  redsGiven: 0
+		};
+	  });
+
+	  songs.forEach(song=>{
+		const sub = (song.submitter||'').trim();
+
+		// For submitter: collect received votes + favorite marks
+		if(sub && base[sub]){
+		  Object.entries(song.scores || {}).forEach(([voter,val])=>{
+			const num = Number(val);
+			if(Number.isFinite(num) && lc(voter) !== lc(sub)){
+			  base[sub].receivedVals.push(num);
+			}
+		  });
+		  const favs = song.favorites || {};
+		  Object.entries(favs).forEach(([voter,flag])=>{
+			if(flag && lc(voter) !== lc(sub)) base[sub].favMarksReceived += 1;
+		  });
+		}
+
+		// For voters: values they gave + green/red counts
+		const {maxNames, minNames} = getExtrema(song.scores || {});
+		roster.forEach(person=>{
+		  const isSubmitter = sub && lc(person) === lc(sub);
+		  const val = Number(song.scores?.[person]);
+		  if(!isSubmitter && Number.isFinite(val)){
+			base[person].givenVals.push(val);
+		  }
+		});
+		maxNames.forEach(n=>{ if(base[n]) base[n].greensGiven += 1; });
+		minNames.forEach(n=>{ if(base[n]) base[n].redsGiven += 1; });
+	  });
+
+	  const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : NaN;
+
+	  return Object.values(base).map(p=>({
+		name: p.name,
+		avgGiven: avg(p.givenVals),
+		avgReceived: avg(p.receivedVals),
+		favorited: p.favMarksReceived,   // <-- total favorites received
+		greensGiven: p.greensGiven,
+		redsGiven: p.redsGiven
+	  }));
+	}
+
+
+	function renderPeopleStats(){
+	  const stats = computePeopleStats();
+
+	  // Rank by Avg (received)
+	  const ranked = [...stats].sort((a,b)=>{
+		const A = Number.isFinite(a.avgReceived) ? a.avgReceived : -Infinity;
+		const B = Number.isFinite(b.avgReceived) ? b.avgReceived : -Infinity;
+		return B - A;
+	  });
+
+	  // For coloring Avg(received) top/bottom & Favorited gold
+	  const recvVals = ranked.map(r => Number.isFinite(r.avgReceived) ? r.avgReceived : null).filter(v=>v!=null);
+	  const globalMaxRecv = recvVals.length ? Math.max(...recvVals) : NaN;
+	  const globalMinRecv = recvVals.length ? Math.min(...recvVals) : NaN;
+	  const favVals = ranked.map(r => r.favorited || 0);
+	  const globalMaxFav = favVals.length ? Math.max(...favVals) : 0;
+	  
+	// For coloring Avg (given)
+	const givenVals = ranked.map(r => Number.isFinite(r.avgGiven) ? r.avgGiven : null).filter(v=>v!=null);
+	const globalMaxGiven = givenVals.length ? Math.max(...givenVals) : NaN;
+	const globalMinGiven = givenVals.length ? Math.min(...givenVals) : NaN;
+	
+	// Extremes for Greens/Reds counts
+	const greensVals = ranked.map(r => r.greensGiven ?? 0);
+	const redsVals   = ranked.map(r => r.redsGiven ?? 0);
+	const maxGreens = greensVals.length ? Math.max(...greensVals) : 0;
+	const minGreens = greensVals.length ? Math.min(...greensVals) : 0;
+	const maxReds   = redsVals.length ? Math.max(...redsVals)   : 0;
+	const minReds   = redsVals.length ? Math.min(...redsVals)   : 0;
+
+	  // --- Chart (bars show Avg Received) ---
+	  statsChartEl.innerHTML = '';
+	  const maxVal = 10; // fixed scale 0..10
+
+	  ranked.forEach((row, idx)=>{
+		const rowEl = document.createElement('div');
+		rowEl.className = 'chart-row';
+
+		// Left label with avatar + name
+		const left = document.createElement('div');
+		left.className = 'chart-name';
+		left.style.display = 'flex';
+		left.style.alignItems = 'center';
+		left.style.gap = '6px';
+		const img = personAvatarEl(row.name); img.style.width='18px'; img.style.height='18px';
+		const label = document.createElement('span'); label.textContent = `${idx+1}. ${row.name}`;
+		left.appendChild(img); left.appendChild(label);
+		rowEl.appendChild(left);
+
+		// Bar (color selectable)
+		const wrap = document.createElement('div');
+		wrap.className = 'chart-bar-wrap';
+
+		const bar = document.createElement('div');
+		bar.className = 'chart-bar';
+		bar.style.background = chartGradient(statsColor);
+
+		const ratio = Number.isFinite(row.avgReceived) ? Math.max(0, Math.min(1, row.avgReceived / maxVal)) : 0;
+		bar.style.width = (ratio * 100) + '%';
+
+		const val = document.createElement('div');
+		val.className = 'chart-val';
+		val.textContent = Number.isFinite(row.avgReceived) ? row.avgReceived.toFixed(2) : '—';
+
+		wrap.appendChild(bar);
+		wrap.appendChild(val);
+		rowEl.appendChild(wrap);
+		statsChartEl.appendChild(rowEl);
+	  });
+
+	  // --- Table ---
+	  statsTableEl.innerHTML = '';
+	  const table = document.createElement('table');
+	  const thead = document.createElement('thead');
+	  thead.innerHTML = `
+		<tr>
+		  <th>Rank</th>
+		  <th>Person</th>
+		  <th title="Average score others gave to their submissions">Avg (received)</th>
+		  <th title="Average score they gave to others">Avg (given)</th>
+		  <th title="Total favorites their submissions received">Favorited ★</th>
+		  <th>Greens</th>
+		  <th>Reds</th>
+		</tr>`;
+	  table.appendChild(thead);
+
+	  const tbody = document.createElement('tbody');
+	  ranked.forEach((r, i)=>{
+		const tr = document.createElement('tr');
+
+		const rankCell = document.createElement('td'); rankCell.innerHTML = `<span class="rank-badge">${i+1}</span>`;
+
+		// Name cell with avatar
+		const nm = document.createElement('td');
+		nm.style.display = 'flex'; nm.style.alignItems = 'center'; nm.style.gap = '8px';
+		const nmImg = personAvatarEl(r.name); nmImg.style.width='22px'; nmImg.style.height='22px';
+		const nmTxt = document.createElement('span'); nmTxt.textContent = r.name;
+		nm.appendChild(nmImg); nm.appendChild(nmTxt);
+
+		const recv = document.createElement('td'); recv.className='pill';
+		if(Number.isFinite(r.avgReceived)){
+		  recv.textContent = r.avgReceived.toFixed(2);
+		  if(r.avgReceived === globalMaxRecv) recv.classList.add('green');
+		  if(r.avgReceived === globalMinRecv) recv.classList.add('red');
+		} else {
+		  recv.textContent = '—';
+		}
+
+		const given = document.createElement('td');
+		given.className = 'pill';
+		if (Number.isFinite(r.avgGiven)) {
+		  given.textContent = r.avgGiven.toFixed(2);
+		  // color by Avg (given): green = highest, red = lowest (ties color multiple rows)
+		  if (r.avgGiven === globalMaxGiven) given.classList.add('green');
+		  if (r.avgGiven === globalMinGiven) given.classList.add('red');
+		} else {
+		  given.textContent = '—';
+		}
+
+
+		const fav = document.createElement('td'); fav.className='pill'; fav.textContent = r.favorited || 0;
+		if((r.favorited||0) === globalMaxFav && globalMaxFav > 0) fav.classList.add('gold');
+
+		// Greens count (color only for extremes)
+		const greens = document.createElement('td');
+		greens.className = 'pill';
+		const g = r.greensGiven ?? 0;
+		greens.textContent = g;
+		if (greensVals.length && maxGreens !== minGreens) {
+		  if (g === maxGreens) greens.classList.add('green'); // highest → green
+		  if (g === minGreens) greens.classList.add('red');   // lowest  → red
+		}
+
+		// Reds count (semantic: highest → red, lowest → green)
+		const reds = document.createElement('td');
+		reds.className = 'pill';
+		const rd = r.redsGiven ?? 0;
+		reds.textContent = rd;
+		if (redsVals.length && maxReds !== minReds) {
+		  if (rd === maxReds) reds.classList.add('red');     // highest → red
+		  if (rd === minReds) reds.classList.add('green');   // lowest  → green
+		}
+
+
+		tr.append(rankCell,nm,recv,given,fav,greens,reds);
+		tbody.appendChild(tr);
+	  });
+	  table.appendChild(tbody);
+	  statsTableEl.appendChild(table);
+	}
+
+
+
+	// Build voter->submitter average matrix
+	function computeAffinity(){
+	  const submitterSet = new Set();
+	  songs.forEach(s=>{ const sub=(s.submitter||'').trim(); if(sub) submitterSet.add(sub); });
+	  const submitters = [...submitterSet];
+
+	  // matrix[voter][submitter] = {sum,count}
+	  const matrix = {};
+	  roster.forEach(v=>{ matrix[v] = {}; submitters.forEach(s=> matrix[v][s] = {sum:0,count:0}); });
+
+	  songs.forEach(song=>{
+		const sub = (song.submitter||'').trim();
+		if(!sub) return;
+		Object.entries(song.scores||{}).forEach(([voter, val])=>{
+		  const num = Number(val);
+		  if(Number.isFinite(num) && lc(voter) !== lc(sub)){
+			matrix[voter] ??= {};
+			matrix[voter][sub] ??= {sum:0,count:0};
+			matrix[voter][sub].sum += num;
+			matrix[voter][sub].count += 1;
+		  }
+		});
+	  });
+
+	  const rows = roster.map(voter=>{
+		const values = {};
+		submitters.forEach(sub=>{
+		  const cell = matrix[voter]?.[sub];
+		  values[sub] = (cell && cell.count) ? (cell.sum / cell.count) : NaN;
+		});
+		return { voter, values };
+	  });
+
+	  const maxVal = Math.max(1, ...rows.flatMap(r=> submitters.map(s=> Number.isFinite(r.values[s]) ? r.values[s] : 0)));
+	  return { submitters, rows, maxVal };
+	}
+
+	function renderAffinity(){
+	  const { submitters, rows } = computeAffinity();
+	  affinityTableEl.innerHTML = '';
+
+	  const table = document.createElement('table');
+
+	  const thead = document.createElement('thead');
+	  thead.innerHTML =
+		'<tr><th>Voter ↓ / Submitter →</th>' +
+		submitters.map(s => '<th>' + s + '</th>').join('') +
+		'</tr>';
+	  table.appendChild(thead);
+
+	  const tbody = document.createElement('tbody');
+	  rows.forEach(r => {
+		const tr = document.createElement('tr');
+		const head = document.createElement('td');
+		head.textContent = r.voter;
+		tr.appendChild(head);
+
+		const rowVals = submitters.map(s => r.values[s]).filter(v => Number.isFinite(v));
+		const rowMax = rowVals.length ? Math.max(...rowVals) : NaN;
+		const rowMin = rowVals.length ? Math.min(...rowVals) : NaN;
+
+		submitters.forEach(sub => {
+		  const val = r.values[sub];
+		  const td = document.createElement('td');
+		  const span = document.createElement('span');
+		  span.className = 'aff-num';
+		  if(Number.isFinite(val)){
+			span.textContent = val.toFixed(2);
+			if(val === rowMax) span.classList.add('best');
+			if(val === rowMin) span.classList.add('worst');
+		  } else {
+			span.textContent = '—';
+		  }
+		  td.appendChild(span);
+		  tr.appendChild(td);
+		});
+
+		tbody.appendChild(tr);
+	  });
+
+	  table.appendChild(tbody);
+	  affinityTableEl.appendChild(table);
+	}
+
+	// Compute pairwise joint affinity among people who have submitted at least once.
+	// joint = (A→B + B→A) / 2, only ranked if both directions exist.
+	function computeJointAffinity(){
+	  const { submitters, rows } = computeAffinity();
+	  // voter -> { submitter: avg } lookup
+	  const look = new Map(rows.map(r => [r.voter, r.values]));
+
+	  const pairs = [];
+	  for(let i=0; i<submitters.length; i++){
+		for(let j=i+1; j<submitters.length; j++){
+		  const A = submitters[i], B = submitters[j];
+		  const aToB = look.get(A)?.[B];
+		  const bToA = look.get(B)?.[A];
+		  const aOK = Number.isFinite(aToB), bOK = Number.isFinite(bToA);
+		  const joint = (aOK && bOK) ? (aToB + bToA)/2 : NaN;
+		  pairs.push({ A, B, aToB, bToA, joint });
+		}
+	  }
+	  return pairs;
+	}
+
+	function renderJointAffinity(){
+	  const pairs = computeJointAffinity()
+		.filter(p => Number.isFinite(p.joint))
+		.sort((a,b) => b.joint - a.joint);
+
+	  jointAffinityTableEl.innerHTML = '';
+	  const table = document.createElement('table');
+
+	  const thead = document.createElement('thead');
+	  thead.innerHTML = `
+		<tr>
+		  <th>Rank</th>
+		  <th>Pair</th>
+		  <th title="Average A gave to B">A→B</th>
+		  <th title="Average B gave to A">B→A</th>
+		  <th title="(A→B + B→A)/2">Joint Avg</th>
+		</tr>`;
+	  table.appendChild(thead);
+
+	  const tbody = document.createElement('tbody');
+	  pairs.forEach((p, idx) => {
+		const tr = document.createElement('tr');
+
+		const rank = document.createElement('td'); rank.innerHTML = `<span class="rank-badge">${idx+1}</span>`;
+
+		// Pair cell centered on the arrow; both sides centered within their halves
+		const pair = document.createElement('td');
+		const wrap = document.createElement('div');
+		wrap.style.display = 'grid';
+		wrap.style.gridTemplateColumns = '1fr auto 1fr';
+		wrap.style.alignItems = 'center';
+		wrap.style.columnGap = '10px';
+
+		// Left (A) — center group
+		const left = document.createElement('div');
+		left.style.display = 'flex';
+		left.style.alignItems = 'center';
+		left.style.justifyContent = 'center';
+		left.style.gap = '6px';
+		const aImg = personAvatarEl(p.A); aImg.style.width='22px'; aImg.style.height='22px';
+		const aName = document.createElement('span'); aName.textContent = p.A;
+		left.appendChild(aImg); left.appendChild(aName);
+
+		// Middle arrow (exact center)
+		const sep = document.createElement('span');
+		sep.textContent = '↔';
+		sep.style.textAlign = 'center';
+
+		// Right (B) — center group; name then avatar (avatar on the right)
+		const right = document.createElement('div');
+		right.style.display = 'flex';
+		right.style.alignItems = 'center';
+		right.style.justifyContent = 'center';
+		right.style.gap = '6px';
+		const bName = document.createElement('span'); bName.textContent = p.B;
+		const bImg = personAvatarEl(p.B); bImg.style.width='22px'; bImg.style.height='22px'; bImg.style.marginLeft = '2px';
+		right.appendChild(bName); right.appendChild(bImg);
+
+		wrap.appendChild(left);
+		wrap.appendChild(sep);
+		wrap.appendChild(right);
+		pair.appendChild(wrap);
+
+		const a2b = document.createElement('td'); a2b.className='pill'; a2b.textContent = Number.isFinite(p.aToB) ? p.aToB.toFixed(2) : '—';
+		const b2a = document.createElement('td'); b2a.className='pill'; b2a.textContent = Number.isFinite(p.bToA) ? p.bToA.toFixed(2) : '—';
+		const joint = document.createElement('td'); joint.className='pill'; joint.textContent = p.joint.toFixed(2);
+
+		tr.append(rank, pair, a2b, b2a, joint);
+		tbody.appendChild(tr);
+	  });
+
+	  table.appendChild(tbody);
+	  jointAffinityTableEl.appendChild(table);
+	}
+
+
+
+
+	// Export chart/panel PNG
+    async function exportElementPNG(el, filename){
+	  if(!el) return;
+	  const canvas = await html2canvas(el, {
+		backgroundColor: null,
+		scale: 2,
+		useCORS: true,
+		allowTaint: true
+	  });
+	  const url = canvas.toDataURL('image/png');
+	  const a = document.createElement('a');
+	  a.href = url;
+	  a.download = filename;
+	  document.body.appendChild(a);  // ensure click works on all browsers
+	  a.click();
+	  a.remove();
+	}
+
+    exportStatsChartBtn.addEventListener('click', ()=> exportElementPNG(statsChartEl, 'people-ranking-chart.png'));
+    exportStatsPanelBtn.addEventListener('click', ()=> exportElementPNG(statsSectionEl, 'people-stats.png'));
+	exportAffinityBtn?.addEventListener('click', ()=> exportElementPNG(affinitySectionEl, 'affinity.png'));
+	
+	if (exportJointAffinityBtn) {
+	  exportJointAffinityBtn.addEventListener('click', () => {
+		const section = document.getElementById('jointAffinitySection'); // fresh lookup
+		exportElementPNG(section, 'joint-affinity.png');
+	  });
+	}
     // init
     renderRosterInputs();
     rebuildScoreInputs();
     fillDatalist();
     sortByEl.value = 'avg_desc';
+
+    // Keep stats responsive to content changes
+    const observer = new MutationObserver(() => { renderPeopleStats(); renderAffinity(); renderJointAffinity(); });
+    observer.observe(cardsEl, {childList:true, subtree:true});
+
+    // Initial render
+    renderPeopleStats(); renderAffinity(); renderJointAffinity();
   </script>
 </body>
 </html>
