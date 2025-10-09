@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Lock layout to half-width (960px) by default -->
+  <meta name="viewport" content="width=960, initial-scale=1" />
   <title>Song Scoring Dashboard</title>
   <style>
     :root{
@@ -10,13 +11,19 @@
       --green:#16a34a; --red:#dc2626; --yellow:#facc15;
       --gold:#f5c542; --silver:#c0c0c8; --bronze:#cd7f32;
     }
-    html,body{height:100%}
+
+    /* Lock overall page width to 960px (half of 1920) */
+    html, body { height:100%; }
+    html { background:var(--bg); }
     body{
-      margin:0; font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background:var(--bg); color:var(--ink); display:flex; flex-direction:column;
+      width:960px; margin:0 auto;        /* centered, fixed layout width */
+      font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--ink); display:flex; flex-direction:column; overflow-x:hidden;
+      background:var(--bg);
     }
+
     header{position:sticky; top:0; z-index:10; backdrop-filter:saturate(1.2) blur(6px); background:linear-gradient(180deg, #0b0b0ccc, #0b0b0c80 70%, transparent);}
-    .container{max-width:1100px; margin:0 auto; padding:20px;}
+    .container{max-width:960px; margin:0 auto; padding:20px;}
     h1{font-size:clamp(22px, 2.6vw, 30px); margin:0 0 8px 0}
     .toolbar{display:grid; gap:10px; grid-template-columns: repeat(12,1fr); align-items:end}
     .toolbar .block{grid-column: span 3; min-width:0}
@@ -32,6 +39,11 @@
     button.primary{border-color:#2563eb; background:linear-gradient(180deg,#2563eb,#1d4ed8); color:white}
     button.ghost{background:transparent}
     .row{display:flex; gap:10px}
+
+    /* Mode menu (toggle pills) */
+    .mode-menu{display:flex; gap:8px; flex-wrap:wrap}
+    .mode-btn{padding:8px 10px; border-radius:999px; border:1px solid var(--ring); background:#0f0f12; font-weight:700}
+    .mode-btn.active{outline:2px solid #2563eb; outline-offset:2px}
 
     /* Roster */
     .roster{margin-top:12px; display:grid; grid-template-columns: 1fr auto auto auto; gap:8px;}
@@ -58,14 +70,13 @@
     .card.compact{padding:12px; border-radius:14px}
     .card.borderless{border-color:transparent; background:transparent}
 
-    /* Title/Artist */
+    /* Title/Artist/Source */
     .title{font-size:18px; font-weight:800; line-height:1.15; white-space:nowrap; overflow:hidden}
-    .artist{font-size:14px; color:var(--muted); margin-top:-2px; border-bottom:1px dashed var(--ring); padding-bottom:8px; white-space:nowrap; overflow:hidden}
+    .artist{font-size:14px; color:var(--muted); margin-top:-2px; padding-bottom:8px; white-space:nowrap; overflow:hidden}
+    .source{font-size:13px; color:var(--muted); margin-top:-6px; border-bottom:1px dashed var(--ring); padding-bottom:8px; white-space:nowrap; overflow:hidden}
 
     /* Hero */
-    .hero{
-      display:grid; grid-template-columns:auto auto; justify-content:center; align-items:baseline; gap:14px; margin-top:4px;
-    }
+    .hero{display:grid; grid-template-columns:auto auto; justify-content:center; align-items:baseline; gap:14px; margin-top:4px;}
     .hero .rank, .hero .avgnum{ font-size:18px; font-weight:800; line-height:1.15; white-space:nowrap; overflow:hidden; }
 
     /* Score grid */
@@ -76,14 +87,38 @@
     }
     .badge{ display:grid; grid-template-columns: auto 1fr auto; align-items:center; gap:8px; min-width:0; }
     .name{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .score-cell{ text-align:right; display:flex; align-items:center; justify-content:flex-end; gap:4px; }
+    .score-cell{ text-align:right; display:flex; align-items:center; justify-content:flex-end; gap:6px; }
     .score{font-variant-numeric:tabular-nums; font-weight:700; display:inline-block; min-width:3.5ch; text-align:right}
     .score.high{color:var(--green)} .score.low{color:var(--red)}
-    .markSubmitter{ display:inline-flex; align-items:center; justify-content:center; height:18px; padding:0 6px; border-radius:6px; background:var(--yellow); color:#111; font-size:11px; font-weight:900 }
+    .score.submitter{ color: var(--yellow); }
+    .favStar{ font-weight:900; margin-right:4px; color:var(--yellow); }
+
+    /* Guess pills & pics */
+    .guess-pill{
+      font-size:11px; padding:0 6px; border-radius:6px; border:1px solid var(--ring); margin-left:6px;
+      background:#0f0f12; color:var(--ink);
+    }
+    .guess-pill.correct{ box-shadow:0 0 0 2px var(--green) inset; }
+    .guess-pill.wrong{   box-shadow:0 0 0 2px var(--red) inset; }
+
+    .guess-pic{
+      width:18px; height:18px; border-radius:6px; object-fit:cover;
+      border:2px solid var(--ring); margin-left:6px; background:#0f0f12;
+    }
+    .guess-pic.correct{ border-color: var(--green); }
+    .guess-pic.wrong{   border-color: var(--red); }
+
+    /* Score-entry favorite toggle */
+    .fav-toggle{
+      width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center;
+      border-radius:8px; border:1px solid var(--ring); background:#0f0f12; margin-right:6px;
+      font-size:14px; line-height:1; color:#777;
+    }
+    .fav-toggle[aria-pressed="true"]{ color:var(--yellow); border-color: #caaa1a; }
+    .fav-toggle:disabled{ opacity:.5; cursor:not-allowed; }
 
     .card-actions{display:flex; gap:8px; margin-top:auto}
     .empty{border:1px dashed var(--ring); border-radius:14px; padding:20px; color:var(--muted); text-align:center}
-    .favStar{ font-weight:900; margin-right:4px; color:var(--yellow); }
 
     /* Dialog */
     dialog{border:1px solid var(--ring); border-radius:14px; background:#0f0f12; color:var(--ink); padding:16px; max-width:860px}
@@ -93,44 +128,29 @@
     .hints{font-size:12px; color:var(--muted)}
 
     /* ---------- Poster Layouts ---------- */
-
     .poster-grid{position:relative; width:100%; height:100%; display:grid;}
-
-    /* Panels/chips/footers are FULLY transparent (no fill, no border) */
     .panel{ background:transparent; border:none; border-radius:14px; padding:14px; height:100%; overflow:hidden; }
     .top-chip{ background:transparent; border:none; border-radius:12px; padding:10px 14px; display:inline-grid; grid-auto-flow:column; gap:14px; }
     .footer{ background:transparent; border:none; border-radius:14px; padding:12px 16px; min-width:62%; }
 
-    /* Sidebar Left — transparent card shell */
     .card.poster-sidebar{ padding:16px; background:transparent; border-color:transparent; }
-    .card.poster-sidebar .poster-grid{
-      grid-template-columns: 280px 1fr; grid-template-rows: 1fr; column-gap:16px; height:100%;
-    }
+    .card.poster-sidebar .poster-grid{ grid-template-columns: 280px 1fr; grid-template-rows: 1fr; column-gap:16px; height:100%; }
 
-    /* Split Sides — transparent card shell */
     .card.poster-split{ padding:16px; background:transparent; border-color:transparent; }
     .card.poster-split .poster-grid{
-      grid-template-columns: 280px 1fr 280px;    /* rails + middle */
-      grid-template-rows: auto 1fr auto;        /* top chip | body | footer */
+      grid-template-columns: 280px 1fr 280px; grid-template-rows: auto 1fr auto;
       row-gap: 12px; column-gap: 16px; height:100%;
     }
-    /* Split footer sits only in the center column to avoid rail overlap */
     .card.poster-split .footer{ grid-column:2; grid-row:3; justify-self:center; }
     .card.poster-split .top-chip{ grid-column:2; grid-row:1; justify-self:center; align-self:start; }
 
     /* ===== People Stats ===== */
-    .stats-card{
-      position:relative; background:var(--card); border:1px solid var(--ring); border-radius:18px; padding:16px;
-    }
+    .stats-card{ position:relative; background:var(--card); border:1px solid var(--ring); border-radius:18px; padding:16px; }
     .stats-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:18px}
     .stats-title{font-weight:800; font-size:18px}
     .stats-wrap{display:grid; grid-template-columns: 1.1fr 1fr; gap:16px; margin-top:12px}
-    .stats-chart{
-      border:1px dashed var(--ring); border-radius:14px; padding:12px; overflow:auto; background:transparent;
-    }
-    .stats-table{
-      border:1px dashed var(--ring); border-radius:14px; overflow:auto;
-    }
+    .stats-chart{ border:1px dashed var(--ring); border-radius:14px; padding:12px; overflow:auto; background:transparent; }
+    .stats-table{ border:1px dashed var(--ring); border-radius:14px; overflow:auto; }
     table{width:100%; border-collapse:collapse; font-size:14px}
     th, td{padding:8px 10px; border-bottom:1px solid var(--ring); text-align:left; white-space:nowrap}
     th{font-size:12px; color:var(--muted); position:sticky; top:0; background:linear-gradient(180deg,#101014,#0b0b0c);}
@@ -143,24 +163,17 @@
     .chart-bar{height:100%; border-radius:8px; background:linear-gradient(180deg,#2563eb,#1d4ed8)}
     .chart-val{position:absolute; right:6px; top:0; bottom:0; display:flex; align-items:center; font-variant-numeric:tabular-nums; font-weight:800}
     .export-row{display:flex; gap:8px}
-	.chart-bar.best{ background: var(--green) !important; }
-	.chart-bar.worst{ background: var(--red) !important; }
-	/* Affinity numeric cells (no bars) */
-	.aff-num{ font-variant-numeric: tabular-nums; font-weight:800 }
-	.aff-num.best{ color: var(--green); }
-	.aff-num.worst{ color: var(--red); }
-
-	/* Gold highlight for "Favorited" leaders */
-	.pill.gold{ color: var(--gold); }
-
-	/* Tiny avatars in stats tables */
-	.stats-table .avatar{ width:22px; height:22px; border-radius:6px; }
-
+    .chart-bar.best{ background: var(--green) !important; }
+    .chart-bar.worst{ background: var(--red) !important; }
+    .aff-num{ font-variant-numeric: tabular-nums; font-weight:800 }
+    .aff-num.best{ color: var(--green); }
+    .aff-num.worst{ color: var(--red); }
+    .pill.gold{ color: var(--gold); }
+    .stats-table .avatar{ width:22px; height:22px; border-radius:6px; }
 
     @media (max-width:980px){
       .stats-wrap{grid-template-columns:1fr}
     }
-
     @media (max-width:840px){
       .toolbar .block{grid-column: span 6}
       .toolbar .block.wide{grid-column: 1 / -1}
@@ -183,6 +196,17 @@
           <label>People (names)</label>
           <div id="roster" class="roster" aria-live="polite"></div>
         </div>
+
+        <!-- Mode toggles -->
+        <div class="block">
+          <label>Modes</label>
+          <div id="modeMenu" class="mode-menu" role="group" aria-label="Modes">
+            <button type="button" class="mode-btn" data-flag="anime">Anime</button>
+            <button type="button" class="mode-btn" data-flag="game">Game</button>
+            <button type="button" class="mode-btn" data-flag="anonymous">Anonymous</button>
+          </div>
+        </div>
+
         <div class="block">
           <label for="layoutStyle">Layout</label>
           <select id="layoutStyle">
@@ -193,6 +217,7 @@
             <option value="poster-split">Poster: Split Sides</option>
           </select>
         </div>
+
         <div class="block">
           <label for="sortBy">Sort by</label>
           <select id="sortBy">
@@ -202,6 +227,16 @@
             <option value="artist_asc">Artist (A → Z)</option>
           </select>
         </div>
+
+        <!-- Guess display toggle -->
+        <div class="block">
+          <label for="guessDisplay">Guess display</label>
+          <select id="guessDisplay">
+            <option value="names" selected>Names</option>
+            <option value="pictures">Pictures</option>
+          </select>
+        </div>
+
         <div class="block">
           <label>&nbsp;</label>
           <button id="exportAll" title="Export all cards as transparent PNGs">Export All PNGs</button>
@@ -210,9 +245,14 @@
           <label>&nbsp;</label>
           <button id="downloadPage" title="Save this dashboard as a single HTML file">Download .html</button>
         </div>
+
         <div class="block">
           <label>&nbsp;</label>
-          <button id="openBulk" class="primary" title="Paste from Google Slides/Sheets">Bulk add (paste CSV/TSV)</button>
+          <button id="openBulk" class="primary" title="Paste from Google Slides/Sheets">Bulk add (scores)</button>
+        </div>
+        <div class="block">
+          <label>&nbsp;</label>
+          <button id="openBulkGuesses" title="Paste anonymous guesses CSV/TSV">Bulk add (guesses)</button>
         </div>
       </div>
 
@@ -231,8 +271,15 @@
             <input id="submitter" required placeholder="Pick from roster or type" list="rosterList" />
             <datalist id="rosterList"></datalist>
           </div>
+
+          <!-- Source field (Anime/Game/Source) -->
+          <div class="span4" id="sourceFieldWrap" style="display:none">
+            <label id="sourceLabel" for="sourceInput">Source</label>
+            <input id="sourceInput" placeholder="" />
+          </div>
+
           <div class="span12">
-            <label>Scores (per person)</label>
+            <label id="scoresLabel">Scores (per person)</label>
             <div id="scoreInputs" class="row" style="flex-wrap:wrap"></div>
           </div>
           <div class="span4">
@@ -253,67 +300,69 @@
   </header>
 
   <main class="container" style="padding-top:6px; padding-bottom:40px">
-    <!-- ===== People Stats (Exportable) ===== -->
+    <!-- ===== People Stats ===== -->
     <section id="peopleStats" class="stats-card" aria-live="polite">
       <div class="stats-head">
         <div class="stats-title">👤 People Stats — Ranking by Avg (received)</div>
-		<div class="export-row">
-		  <label for="statsColor" class="name" style="align-self:center">Graph color</label>
-		  <select id="statsColor" style="width:auto">
-			<option value="blue" selected>Blue</option>
-			<option value="green">Green</option>
-			<option value="red">Red</option>
-			<option value="purple">Purple</option>
-			<option value="pink">Pink</option>
-			<option value="gold">Gold</option>
-			<option value="gray">Gray</option>
-		  </select>
-		  <button id="exportStatsChart" title="Export chart as transparent PNG">Export Chart PNG</button>
-		  <button id="exportStatsPanel" title="Export entire stats panel as transparent PNG">Export Panel PNG</button>
-		</div>
+        <div class="export-row">
+          <label for="statsColor" class="name" style="align-self:center">Graph color</label>
+          <select id="statsColor" style="width:auto">
+            <option value="blue" selected>Blue</option>
+            <option value="green">Green</option>
+            <option value="red">Red</option>
+            <option value="purple">Purple</option>
+            <option value="pink">Pink</option>
+            <option value="gold">Gold</option>
+            <option value="gray">Gray</option>
+          </select>
+          <button id="openComments" data-hide-on-export title="Manually set per-person comment counts">🗣️ Edit comments</button>
+          <button id="exportStatsChart" title="Export chart as transparent PNG">Export Chart PNG</button>
+          <button id="exportStatsPanel" title="Export entire stats panel as transparent PNG">Export Panel PNG</button>
+        </div>
       </div>
       <div class="stats-wrap" id="statsWrap">
         <div class="stats-chart" id="statsChart" aria-label="Ranking chart (higher is better)"></div>
         <div class="stats-table" id="statsTable" aria-label="Per-person details"></div>
       </div>
     </section>
-	
-	<!-- ===== Affinity (Exportable) ===== -->
-	<section id="affinitySection" class="stats-card" aria-live="polite">
-	  <div class="stats-head">
-		<div class="stats-title">🤝 Affinity — who likes whose songs</div>
-		<div class="export-row">
-		  <button id="exportAffinity" title="Export as transparent PNG">Export Affinity PNG</button>
-		</div>
-	  </div>
-	  <div class="stats-table" id="affinityTable"></div>
-	</section>
-	
-	<!-- ===== Joint Affinity (Exportable) ===== -->
-	<section id="jointAffinitySection" class="stats-card" aria-live="polite">
-	  <div class="stats-head">
-		<div class="stats-title">🔗 Joint Affinity — average of A→B and B→A</div>
-		<div class="export-row">
-		  <button id="exportJointAffinity" type="button" title="Export as transparent PNG">Export Joint Affinity PNG</button>
-		</div>
-	  </div>
-	  <div class="stats-table" id="jointAffinityTable"></div>
-	</section>
+
+    <!-- ===== Affinity ===== -->
+    <section id="affinitySection" class="stats-card" aria-live="polite">
+      <div class="stats-head">
+        <div class="stats-title">🤝 Affinity — who likes whose songs</div>
+        <div class="export-row">
+          <button id="exportAffinity" title="Export as transparent PNG">Export Affinity PNG</button>
+        </div>
+      </div>
+      <div class="stats-table" id="affinityTable"></div>
+    </section>
+
+    <!-- ===== Joint Affinity ===== -->
+    <section id="jointAffinitySection" class="stats-card" aria-live="polite">
+      <div class="stats-head">
+        <div class="stats-title">🔗 Joint Affinity — average of A→B and B→A</div>
+        <div class="export-row">
+          <button id="exportJointAffinity" type="button" title="Export as transparent PNG">Export Joint Affinity PNG</button>
+        </div>
+      </div>
+      <div class="stats-table" id="jointAffinityTable"></div>
+    </section>
 
     <section id="cards" class="cards" aria-live="polite" style="margin-top:18px">
       <div class="empty" id="emptyState">No songs yet — add one above ✨</div>
     </section>
   </main>
 
-  <!-- Bulk import dialog -->
+  <!-- Bulk import (scores) -->
   <dialog id="bulkDialog">
     <form method="dialog" id="bulkForm">
-      <h2 style="margin:0 0 8px">Bulk add songs</h2>
-      <p class="hints">Paste rows from Google <b>Slides</b> (table) or <b>Sheets</b>. Columns can be in any order as long as headers exist. Required headers: <code>song</code>, <code>artist</code>, <code>submitter</code>. Headers matching roster names will be treated as that person's score. Add * after a score to mark it as a favorite.</p>
+      <h2 style="margin:0 0 8px">Bulk add songs — scores</h2>
+      <p class="hints">Paste rows from Google <b>Slides</b> (table) or <b>Sheets</b>. Required headers: <code>song</code>, <code>artist</code>, <code>submitter|nominator</code>. Optional: <code>anime|game</code> source, <code>average</code>. Headers matching roster names are treated as that person's score.</p>
+      <p class="hints"><b>Tip:</b> add an asterisk directly after a score to mark that voter as favoriting the song, e.g., <code>8*</code> or <code>7.9*</code>.</p>
       <div class="grid">
         <div class="span12">
           <label for="bulkText">Rows (CSV/TSV)</label>
-          <textarea id="bulkText" placeholder="song\artist\submitter\Person 1\Person 2\Person 3\..."></textarea>
+          <textarea id="bulkText" placeholder="Nominator,Song,Artist,Game/Anime,Average,Nick,Jiho,...&#10;Nick,Martyr,Monster Siren Records,Arknights,6.9,/,8*,7,..."></textarea>
         </div>
         <div class="span6">
           <label for="hasHeader">First row is header</label>
@@ -340,8 +389,61 @@
       </div>
       <details class="hints" style="margin-top:8px">
         <summary>Header examples</summary>
-        <code>song,artist,submitter,Person 1,Person 2,Person 3,Person 4,Person 5</code>
+        <code>Submitter,Song,Artist,Anime,Average,Nick,Jiho,Nathan,...</code><br/>
+        <code>Nominator,Song,Artist,Game,Average,Nick,Jiho,Zarif,...</code>
       </details>
+    </form>
+  </dialog>
+
+  <!-- Bulk import (guesses) -->
+  <dialog id="bulkGuessDialog">
+    <form method="dialog" id="bulkGuessForm">
+      <h2 style="margin:0 0 8px">Bulk add guesses — anonymous</h2>
+      <p class="hints">Format example:<br>
+        <code>Nominator,Song,Artist,Roanyk,Jiho,Nathan,Desmond,Jaheim,Caelan,Jeff,Waj,Asif</code><br>
+        <code>Desmond,Slider,Koji Kondo,Desmond,Desmond,Desmond,/,Roanyk,Desmond,Desmond,Asif,Desmond</code>
+      </p>
+      <div class="grid">
+        <div class="span12">
+          <label for="bulkGuessText">Rows (CSV/TSV)</label>
+          <textarea id="bulkGuessText" placeholder="Paste guesses sheet rows here..."></textarea>
+        </div>
+        <div class="span6">
+          <label for="guessHasHeader">First row is header</label>
+          <select id="guessHasHeader">
+            <option value="yes" selected>Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="span6">
+          <label for="guessDelimiter">Delimiter</label>
+          <select id="guessDelimiter">
+            <option value="auto" selected>Auto-detect</option>
+            <option value=",">Comma</option>
+            <option value="\t">Tab</option>
+            <option value=";">Semicolon</option>
+          </select>
+        </div>
+        <div class="span12">
+          <div class="row" style="justify-content:flex-end; gap:8px">
+            <button value="cancel" type="button" id="cancelBulkGuess" class="ghost">Cancel</button>
+            <button value="default" type="submit" class="primary">Import guesses</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Comments editor dialog -->
+  <dialog id="commentsDialog">
+    <form method="dialog" id="commentsForm">
+      <h2 style="margin:0 0 8px">🗣️ Comments per person</h2>
+      <p class="hints">Enter a manual count for each person (integers). These appear in the People Stats table.</p>
+      <div id="commentsList" class="grid" style="grid-template-columns: 1fr auto; row-gap:8px; column-gap:12px"></div>
+      <div class="row" style="justify-content:flex-end; gap:8px; margin-top:12px">
+        <button value="cancel" type="button" id="cancelComments" class="ghost">Cancel</button>
+        <button value="default" type="submit" class="primary">Save</button>
+      </div>
     </form>
   </dialog>
 
@@ -362,31 +464,48 @@
     const titleEl = document.getElementById('title');
     const artistEl = document.getElementById('artist');
 
+    // Mode toggles
+    const modeMenuEl = document.getElementById('modeMenu');
+
+    // Source controls
+    const sourceFieldWrap = document.getElementById('sourceFieldWrap');
+    const sourceLabelEl = document.getElementById('sourceLabel');
+    const sourceInputEl = document.getElementById('sourceInput');
+    const scoresLabelEl = document.getElementById('scoresLabel');
+
+    // Guess display
+    const guessDisplayEl = document.getElementById('guessDisplay');
+    let guessDisplayMode = guessDisplayEl?.value || 'names';
+    guessDisplayEl?.addEventListener('change', () => { guessDisplayMode = guessDisplayEl.value; refreshAllCards(); });
+
     // Stats panel elements
     const statsChartEl = document.getElementById('statsChart');
     const statsTableEl = document.getElementById('statsTable');
     const exportStatsChartBtn = document.getElementById('exportStatsChart');
     const exportStatsPanelBtn = document.getElementById('exportStatsPanel');
     const statsSectionEl = document.getElementById('peopleStats');
-	
-	const statsColorEl = document.getElementById('statsColor');
-	let statsColor = statsColorEl?.value || 'blue';
-	statsColorEl?.addEventListener('change', () => {
-	  statsColor = statsColorEl.value;
-	  renderPeopleStats();
-	});
 
-	// Affinity elements
-	const affinitySectionEl = document.getElementById('affinitySection');
-	const affinityTableEl = document.getElementById('affinityTable');
-	const exportAffinityBtn = document.getElementById('exportAffinity');
-	
-	// Joint Affinity elements
-	const jointAffinitySectionEl = document.getElementById('jointAffinitySection');
-	const jointAffinityTableEl = document.getElementById('jointAffinityTable');
-	const exportJointAffinityBtn = document.getElementById('exportJointAffinity');
+    const statsColorEl = document.getElementById('statsColor');
+    let statsColor = statsColorEl?.value || 'blue';
+    statsColorEl?.addEventListener('change', () => { statsColor = statsColorEl.value; renderPeopleStats(); });
 
-    // Bulk dialog
+    // Affinity
+    const affinitySectionEl = document.getElementById('affinitySection');
+    const affinityTableEl = document.getElementById('affinityTable');
+    const exportAffinityBtn = document.getElementById('exportAffinity');
+
+    // Joint Affinity
+    const jointAffinitySectionEl = document.getElementById('jointAffinitySection');
+    const jointAffinityTableEl = document.getElementById('jointAffinityTable');
+    const exportJointAffinityBtn = document.getElementById('exportJointAffinity');
+
+    // Comments editor
+    const openCommentsBtn = document.getElementById('openComments');
+    const commentsDialog  = document.getElementById('commentsDialog');
+    const commentsForm    = document.getElementById('commentsForm');
+    const commentsListEl  = document.getElementById('commentsList');
+
+    // Bulk dialogs
     const bulkDialog = document.getElementById('bulkDialog');
     const openBulkBtn = document.getElementById('openBulk');
     const bulkForm = document.getElementById('bulkForm');
@@ -395,35 +514,74 @@
     const delimiterEl = document.getElementById('delimiter');
     const cancelBulkBtn = document.getElementById('cancelBulk');
 
+    const bulkGuessDialog = document.getElementById('bulkGuessDialog');
+    const openBulkGuessesBtn = document.getElementById('openBulkGuesses');
+    const bulkGuessForm = document.getElementById('bulkGuessForm');
+    const bulkGuessText = document.getElementById('bulkGuessText');
+    const guessHasHeaderEl = document.getElementById('guessHasHeader');
+    const guessDelimiterEl = document.getElementById('guessDelimiter');
+    const cancelBulkGuessBtn = document.getElementById('cancelBulkGuess');
+
+    // State
     let roster = ['Person 1','Person 2','Person 3','Person 4','Person 5'];
     let photos = {}; // { [name:string]: dataUrl }
-    // songs: {id,title,artist,submitter,scores:{name:number}, favorites:{name:true}, avg}
+    // song: {id,title,artist,submitter,avg,scores:{},favorites:{},flags:{anime,game,anonymous},sourceText?:string,guesses?:{[name]:string}}
     let songs = [];
-    let ranksMap = new Map(); // song.id -> rank
-
-    // Tie-breaking
+    let commentCounts = {}; // { [name:string]: number }
+    let ranksMap = new Map();
     let tieBreakers = new Map();
-    const EPS = 1e-6;
-    function refreshTieBreakers(){
-      tieBreakers = new Map(songs.map(s => [s.id, Math.random()]));
-    }
 
-    /* utils */
+    // ---- Utils
+    const EPS = 1e-6;
     const uid = () => Math.random().toString(36).slice(2,9);
     const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
     const sanitizeFilename = (s) => s.replace(/[\/:*?"<>|]/g,'_').slice(0,80);
-    const readImageAsDataURL = (file) => new Promise((resolve,reject)=>{ const fr = new FileReader(); fr.onload = ()=>resolve(fr.result); fr.onerror = reject; fr.readAsDataURL(file); });
-
+    const readImageAsDataURL = (file) => new Promise((resolve,reject)=>{ const fr=new FileReader(); fr.onload=()=>resolve(fr.result); fr.onerror=reject; fr.readAsDataURL(file); });
     function norm(s){return (s||'').toString().trim();}
     function lc(s){return norm(s).toLowerCase();}
-    const RESERVED_HEADERS = new Set(['song','title','artist','submitter','average']);
+    const RESERVED_HEADERS = new Set(['song','title','artist','submitter','nominator','average','anime','game']);
     function isBlankScore(v){ const t = lc(v); return t===''||t==='/'||t==='na'||t==='n/a'||t==='–'||t==='—'||t==='nil'; }
+    function parseScoreCell(raw){ const txt=(raw||'').toString().trim(); const favorite=/[*★]/.test(txt); const num=parseFloat(txt.replace(/[^\d.]+/g,'')); return { num: Number.isFinite(num)? num : NaN, favorite }; }
 
-    function parseScoreCell(raw){
-      const txt = (raw || '').toString().trim();
-      const favorite = /[*★]/.test(txt);
-      const num = parseFloat(txt.replace(/[^\d.]+/g,''));
-      return { num: Number.isFinite(num) ? num : NaN, favorite };
+    // Mode flags (global UI)
+    const activeFlags = ()=> {
+      const flags = {anime:false, game:false, anonymous:false};
+      modeMenuEl.querySelectorAll('.mode-btn').forEach(btn=>{
+        if(btn.classList.contains('active')) flags[btn.dataset.flag] = true;
+      });
+      return flags;
+    };
+    function songHasFlag(song, flag){
+      if(song?.flags && typeof song.flags[flag] === 'boolean') return !!song.flags[flag];
+      return !!activeFlags()[flag];
+    }
+
+    // Mode toggle handlers
+    modeMenuEl.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.mode-btn'); if(!btn) return;
+      btn.classList.toggle('active');
+      updateSourceFieldVisibility();
+      rebuildScoreInputs();
+      refreshAllCards();
+    });
+
+    function updateSourceFieldVisibility(){
+      const flags = activeFlags();
+      const showSrc = flags.anime || flags.game;
+      sourceFieldWrap.style.display = showSrc ? '' : 'none';
+      if(flags.anime && flags.game){
+        sourceLabelEl.textContent = 'Source';
+        sourceInputEl.placeholder = 'Anime or Game';
+      } else if(flags.anime){
+        sourceLabelEl.textContent = 'Anime';
+        sourceInputEl.placeholder = 'e.g., ACCA: 13-Territory Inspection Dept.';
+      } else if(flags.game){
+        sourceLabelEl.textContent = 'Game';
+        sourceInputEl.placeholder = 'e.g., Arknights';
+      } else {
+        sourceInputEl.value = '';
+      }
+      scoresLabelEl.textContent = flags.anonymous ? 'Scores (per person) • plus each person\'s guess' : 'Scores (per person)';
     }
 
     function personAvatarEl(name, size='sm'){
@@ -448,13 +606,18 @@
       }
     }
     const resizeObserver = new ResizeObserver(() => {
-      document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(shrinkToFit);
+      document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(shrinkToFit);
     });
     window.addEventListener('resize', () => {
-      document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(shrinkToFit);
-      renderPeopleStats(); renderAffinity(); // keep bar widths responsive
+      document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(shrinkToFit);
+      renderPeopleStats(); renderAffinity();
     });
 
+    function ensureCommentKeys(){
+      roster.forEach(name=>{ if(!commentCounts.hasOwnProperty(name)) commentCounts[name] = 0; });
+    }
+
+    // ---------- Roster UI ----------
     function renderRosterInputs(){
       rosterEl.innerHTML = '';
       datalistEl.innerHTML = '';
@@ -466,7 +629,8 @@
           const oldName = roster[i];
           const newName = rowName.value.trim();
           if(photos[oldName] && !photos[newName]) photos[newName] = photos[oldName];
-          if(oldName !== newName){ delete photos[oldName]; }
+          if(commentCounts.hasOwnProperty(oldName) && !commentCounts.hasOwnProperty(newName)) commentCounts[newName] = commentCounts[oldName];
+          if(oldName !== newName){ delete photos[oldName]; delete commentCounts[oldName]; }
           roster[i] = newName;
           rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderRosterInputs(); renderPeopleStats(); renderAffinity();
         });
@@ -487,6 +651,7 @@
           delete photos[roster[i]];
           roster.splice(i,1);
           peopleCountEl.value = roster.length;
+          Object.keys(commentCounts).forEach(k=>{ if(!roster.includes(k)) delete commentCounts[k]; });
           renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderPeopleStats(); renderAffinity();
         });
 
@@ -504,56 +669,7 @@
         const opt = document.createElement('option'); opt.value = name; datalistEl.appendChild(opt);
       });
     }
-
-    function fillDatalist(){
-      datalistEl.innerHTML = '';
-      roster.forEach(n=>{ const o=document.createElement('option'); o.value=n; datalistEl.appendChild(o);});
-    }
-
-    function rebuildScoreInputs(){
-      scoreInputsEl.innerHTML = '';
-      const sub = (submitterEl.value || '').trim().toLowerCase();
-      roster.forEach((name, idx)=>{
-        const wrap = document.createElement('div');
-        wrap.style.minWidth='200px'; wrap.style.flex='1 1 220px';
-
-        const who = name || `Person ${idx+1}`;
-        const isSubmitter = who.trim().toLowerCase() === sub && sub.length>0;
-
-        const img = personAvatarEl(who);
-        const txt = document.createElement('span'); txt.className='name'; txt.textContent = who;
-
-        const tag = document.createElement('span');
-        if(isSubmitter){ tag.className='markSubmitter'; tag.textContent='Submitter'; }
-
-        const left = document.createElement('div');
-        left.className='badge';
-        left.appendChild(img);
-        left.appendChild(txt);
-        if(isSubmitter) left.appendChild(tag);
-
-        const inp = document.createElement('input');
-        inp.type='number'; inp.step='0.01'; inp.placeholder='score'; inp.dataset.person = who;
-        if(isSubmitter){ inp.disabled = true; inp.title = 'Submitter cannot score their own song'; }
-
-        const row = document.createElement('div');
-        row.style.display='grid';
-        row.style.gridTemplateColumns='1fr 90px';
-        row.style.alignItems='center';
-        row.style.gap='8px';
-
-        const scoreWrap = document.createElement('div'); scoreWrap.className='score-cell';
-        scoreWrap.appendChild(inp);
-
-        row.appendChild(left);
-        row.appendChild(scoreWrap);
-        wrap.appendChild(row);
-
-        scoreInputsEl.appendChild(wrap);
-      });
-    }
-
-    submitterEl.addEventListener('input', rebuildScoreInputs);
+    function fillDatalist(){ datalistEl.innerHTML = ''; roster.forEach(n=>{ const o=document.createElement('option'); o.value=n; datalistEl.appendChild(o);}); }
 
     peopleCountEl.addEventListener('change', ()=>{
       const n = clamp(parseInt(peopleCountEl.value||'0',10),1,50);
@@ -561,35 +677,90 @@
       if(diff>0){ for(let i=0;i<diff;i++){ roster.push(`Person ${roster.length+1}`);} }
       if(diff<0){
         const removed = roster.slice(n);
-        removed.forEach(name => delete photos[name]);
+        removed.forEach(name => { delete photos[name]; delete commentCounts[name]; });
         roster.splice(n);
       }
       renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderPeopleStats(); renderAffinity();
     });
 
+    // ---------- Inputs (scores + guesses + manual favorites) ----------
+    submitterEl.addEventListener('input', rebuildScoreInputs);
+    function rebuildScoreInputs(){
+      scoreInputsEl.innerHTML = '';
+      const sub = lc((submitterEl.value || '').trim());
+      const flags = activeFlags();
+      roster.forEach((name, idx)=>{
+        const wrap = document.createElement('div');
+        wrap.style.minWidth='260px'; wrap.style.flex='1 1 260px';
+
+        const who = name || `Person ${idx+1}`;
+
+        const img = personAvatarEl(who);
+        const txt = document.createElement('span'); txt.className='name'; txt.textContent = who;
+
+        const left = document.createElement('div');
+        left.className='badge';
+        left.appendChild(img);
+        left.appendChild(txt);
+
+        const row = document.createElement('div');
+        row.style.display='grid';
+        row.style.gridTemplateColumns='1fr 220px';
+        row.style.alignItems='center';
+        row.style.gap='8px';
+
+        const scoreWrap = document.createElement('div'); scoreWrap.className='score-cell';
+
+        // Manual favorite toggle
+        const favBtn = document.createElement('button');
+        favBtn.type='button'; favBtn.className='fav-toggle'; favBtn.innerHTML='★'; favBtn.dataset.person = who;
+        favBtn.title = 'Toggle favorite';
+        if(lc(who)===sub){ favBtn.disabled = true; favBtn.title = 'Submitter cannot favorite their own song'; }
+        favBtn.setAttribute('aria-pressed','false');
+        favBtn.addEventListener('click', ()=>{
+          if(favBtn.disabled) return;
+          const on = favBtn.getAttribute('aria-pressed') === 'true';
+          favBtn.setAttribute('aria-pressed', String(!on));
+        });
+        scoreWrap.appendChild(favBtn);
+
+        const inp = document.createElement('input');
+        inp.type='number'; inp.step='0.01'; inp.placeholder='score'; inp.dataset.person = who;
+        if(lc(who)===sub){ inp.disabled = true; inp.title = 'Submitter cannot score their own song'; }
+        scoreWrap.appendChild(inp);
+
+        // Anonymous mode: add a guess select for each person
+        if(flags.anonymous){
+          const guessSel = document.createElement('select');
+          guessSel.dataset.person = who;
+          guessSel.className = 'guess-input';
+          guessSel.title = 'Guess who submitted this';
+          const placeholder = document.createElement('option');
+          placeholder.value = ''; placeholder.textContent = '— Guess submitter —';
+          guessSel.appendChild(placeholder);
+          roster.forEach(optName=>{
+            const opt = document.createElement('option');
+            opt.value = optName; opt.textContent = optName;
+            guessSel.appendChild(opt);
+          });
+          guessSel.style.minWidth = '160px';
+          scoreWrap.appendChild(guessSel);
+        }
+
+        row.appendChild(left);
+        row.appendChild(scoreWrap);
+        wrap.appendChild(row);
+        scoreInputsEl.appendChild(wrap);
+      });
+    }
+
+    // ---------- Averages / sorting ----------
     function computeAverage(scores){
       const vals = Object.values(scores).map(v=> typeof v==="number"? v : parseFloat(v)).filter(v=>!Number.isNaN(v));
       if(!vals.length) return 0;
       return vals.reduce((a,b)=>a+b,0)/vals.length;
     }
-
-    function addSong(data){
-      songs.push(data); rerenderCards(); renderPeopleStats(); renderAffinity();
-    }
-
-    function getExtrema(scores){
-      const entries = Object.entries(scores).filter(([,v])=>v!=='' && v!=null && !Number.isNaN(parseFloat(v)));
-      if(entries.length===0) return {maxNames:new Set(), minNames:new Set()};
-      const nums = entries.map(([n,v])=>[n, parseFloat(v)]);
-      const maxVal = Math.max(...nums.map(([,v])=>v));
-      const minVal = Math.min(...nums.map(([,v])=>v));
-      const maxNames = new Set(nums.filter(([,v])=>v===maxVal).map(([n])=>n));
-      const minNames = new Set(nums.filter(([,v])=>v===minVal).map(([n])=>n));
-      return {maxNames, minNames};
-    }
-
-    function clearEmptyState(){ const es = document.getElementById('emptyState'); if(es) es.remove(); }
-
+    function refreshTieBreakers(){ tieBreakers = new Map(songs.map(s => [s.id, Math.random()])); }
     function sortByRanking(a,b){
       const diff = (b.avg) - (a.avg);
       if (Math.abs(diff) > EPS) return diff;
@@ -622,37 +793,30 @@
       if(rank===3) return getComputedStyle(document.documentElement).getPropertyValue('--bronze').trim() || '#cd7f32';
       return getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#e8e8ea';
     }
-	
-	function chartGradient(color){
-	  switch(color){
-		case 'green':  return 'linear-gradient(180deg,#16a34a,#15803d)';
-		case 'red':    return 'linear-gradient(180deg,#dc2626,#b91c1c)';
-		case 'purple': return 'linear-gradient(180deg,#8b5cf6,#7c3aed)';
-		case 'pink':   return 'linear-gradient(180deg,#ec4899,#db2777)';
-		case 'gold':   return `linear-gradient(180deg,${getComputedStyle(document.documentElement).getPropertyValue('--gold').trim()||'#f5c542'},#d4a72c)`;
-		case 'gray':   return 'linear-gradient(180deg,#6b7280,#4b5563)';
-		default:       return 'linear-gradient(180deg,#2563eb,#1d4ed8)'; // blue
-	  }
-	}
-
-    function rerenderCards(){
-      cardsEl.innerHTML = ''; clearEmptyState();
-      sortByEl.value = 'avg_desc';
-      refreshTieBreakers(); songs.sort(sortByRanking); assignRanks();
-      songs.forEach(song=> cardsEl.appendChild(renderCard(song)));
-      document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
+    function chartGradient(color){
+      switch(color){
+        case 'green':  return 'linear-gradient(180deg,#16a34a,#15803d)';
+        case 'red':    return 'linear-gradient(180deg,#dc2626,#b91c1c)';
+        case 'purple': return 'linear-gradient(180deg,#8b5cf6,#7c3aed)';
+        case 'pink':   return 'linear-gradient(180deg,#ec4899,#db2777)';
+        case 'gold':   return `linear-gradient(180deg,${getComputedStyle(document.documentElement).getPropertyValue('--gold').trim()||'#f5c542'},#d4a72c)`;
+        case 'gray':   return 'linear-gradient(180deg,#6b7280,#4b5563)';
+        default:       return 'linear-gradient(180deg,#2563eb,#1d4ed8)';
+      }
     }
 
-    function refreshAllCards(){
-      refreshTieBreakers(); songs.sort(sortByRanking); assignRanks();
-      document.querySelectorAll('.card').forEach(card=>{
-        const id = card.dataset.id; const song = songs.find(s=>s.id===id);
-        if(song){ card.replaceWith(renderCard(song)); }
-      });
-      document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
+    // ---------- Card builders ----------
+    function getExtrema(scores){
+      const entries = Object.entries(scores).filter(([,v])=>v!=='' && v!=null && !Number.isNaN(parseFloat(v)));
+      if(entries.length===0) return {maxNames:new Set(), minNames:new Set()};
+      const nums = entries.map(([n,v])=>[n, parseFloat(v)]);
+      const maxVal = Math.max(...nums.map(([,v])=>v));
+      const minVal = Math.min(...nums.map(([,v])=>v));
+      const maxNames = new Set(nums.filter(([,v])=>v===maxVal).map(([n])=>n));
+      const minNames = new Set(nums.filter(([,v])=>v===minVal).map(([n])=>n));
+      return {maxNames, minNames};
     }
 
-    /* ---------- Poster render helpers ---------- */
     function buildScoresList(names, song, extraClass=''){
       const {maxNames, minNames} = getExtrema(song.scores);
       const wrap = document.createElement('div');
@@ -665,25 +829,45 @@
         const nameSpan = document.createElement('span'); nameSpan.className='name'; nameSpan.textContent = person;
         badge.appendChild(img); badge.appendChild(nameSpan);
 
-        const isSubmitter = (person && song.submitter && person.trim().toLowerCase()===song.submitter.trim().toLowerCase());
-        if(isSubmitter){
-          const m=document.createElement('span'); m.className='markSubmitter'; m.title='Submitter'; m.textContent='Submitter';
-          badge.appendChild(m);
+        // Anonymous: show guess representation; correctness border on GUESSED identity only
+        if(songHasFlag(song,'anonymous')){
+          const g = (song.guesses||{})[person];
+          if(g){
+            const correct = lc(g) === lc(song.submitter);
+            if(guessDisplayMode === 'pictures'){
+              const gImg = personAvatarEl(g);
+              gImg.classList.add('guess-pic');
+              gImg.classList.add(correct ? 'correct' : 'wrong');
+              badge.appendChild(gImg);
+            } else {
+              const pill = document.createElement('span'); pill.className='guess-pill'; pill.textContent = g;
+              pill.classList.add(correct ? 'correct' : 'wrong');
+              badge.appendChild(pill);
+            }
+          }
         }
         rowL.appendChild(badge);
 
         const rowR = document.createElement('div'); rowR.className='score-cell';
 
+        // Favorite star (works in anonymous too)
         const isFav = !!(song.favorites && song.favorites[person]);
-        if(isFav){ const star = document.createElement('span'); star.className = 'favStar'; star.textContent = '★'; rowR.appendChild(star); }
+        if(isFav){ const star=document.createElement('span'); star.className='favStar'; star.textContent='★'; rowR.appendChild(star); }
 
         const sv = document.createElement('span'); sv.className='score';
-        if(isSubmitter) sv.textContent = '—';
-        else {
-          const val = song.scores[person];
-          sv.textContent = (val===undefined||val==='')? '—' : String(val);
-          if(maxNames.has(person)) sv.classList.add('high');
-          if(minNames.has(person)) sv.classList.add('low');
+        const isSubmitter = (person && song.submitter && lc(person)===lc(song.submitter));
+        if(isSubmitter){
+          sv.textContent = 'Submitter';
+          sv.classList.add('submitter');
+        } else {
+          const raw = song.scores?.[person];
+          if(raw===undefined || raw==='' || Number.isNaN(parseFloat(raw))){
+            sv.textContent = '-';
+          } else {
+            sv.textContent = String(raw);
+            if(maxNames.has(person)) sv.classList.add('high');
+            if(minNames.has(person)) sv.classList.add('low');
+          }
         }
         rowR.appendChild(sv);
 
@@ -701,28 +885,28 @@
 
       const grid = document.createElement('div'); grid.className = 'poster-grid'; card.appendChild(grid);
 
-      // Left transparent panel (full height)
+      // Left panel
       const panel = document.createElement('div');
-      panel.className = 'panel';
-      panel.style.gridColumn = '1';
-      panel.style.gridRow = '1 / -1';
+      panel.className = 'panel'; panel.style.gridColumn = '1'; panel.style.gridRow = '1 / -1';
       grid.appendChild(panel);
 
       const t = document.createElement('div'); t.className='title'; t.textContent = song.title; t.style.color = color;
       const a = document.createElement('div'); a.className='artist'; a.textContent = song.artist; a.style.color = color;
       panel.appendChild(t); panel.appendChild(a);
+      if((songHasFlag(song,'anime') || songHasFlag(song,'game')) && song.sourceText){
+        const s = document.createElement('div'); s.className='source'; s.textContent = song.sourceText; panel.appendChild(s);
+      }
 
       const chip = document.createElement('div'); chip.className='hero chips';
       const rankEl = document.createElement('div'); rankEl.className='rank'; rankEl.textContent = 'Ranking: ' + placeText(rank); rankEl.style.color = color;
-      const avgEl = document.createElement('div'); avgEl.className='avgnum'; avgEl.textContent = 'Average: ' + (Number.isFinite(song.avg)? song.avg.toFixed(2) : '—'); avgEl.style.color = color;
+      const avgEl = document.createElement('div'); avgEl.className='avgnum'; avgEl.textContent = 'Average: ' + (Number.isFinite(song.avg)? song.avg.toFixed(2) : '-'); avgEl.style.color = color;
       chip.appendChild(rankEl); chip.appendChild(avgEl);
       panel.appendChild(chip);
 
-      const lbl = document.createElement('div'); lbl.className='posterScoresLabel'; lbl.textContent = 'Scores';
+      const lbl = document.createElement('div'); lbl.textContent = 'Scores';
       panel.appendChild(lbl);
       panel.appendChild(buildScoresList(roster, song, 'rail-scores'));
 
-      // Right column spacer (keeps 16:9 grid)
       const spacer = document.createElement('div'); spacer.style.gridColumn = '2'; spacer.style.gridRow = '1 / -1'; grid.appendChild(spacer);
 
       const actions = document.createElement('div'); actions.className='card-actions';
@@ -748,39 +932,34 @@
       const leftNames = roster.slice(0, half);
       const rightNames = roster.slice(half);
 
-      // LEFT RAIL (span all rows)
       const leftRail = document.createElement('div');
-      leftRail.className='panel';
-      leftRail.style.gridColumn = '1';
-      leftRail.style.gridRow = '1 / -1';
-      leftRail.appendChild((()=>{ const lbl=document.createElement('div'); lbl.className='posterScoresLabel'; lbl.textContent='Scores'; return lbl;})());
+      leftRail.className='panel'; leftRail.style.gridColumn = '1'; leftRail.style.gridRow = '1 / -1';
+      leftRail.appendChild((()=>{ const lbl=document.createElement('div'); lbl.textContent='Scores'; return lbl;})());
       leftRail.appendChild(buildScoresList(leftNames, song, 'rail-scores'));
       grid.appendChild(leftRail);
 
-      // TOP CENTER CHIP (center column only)
       const top = document.createElement('div'); top.className='top-chip';
       const r = document.createElement('div'); r.className='rank'; r.textContent = 'Ranking'; r.style.color = color;
       const rnum = document.createElement('div'); rnum.className='rank'; rnum.textContent = placeText(rank); rnum.style.color = color; rnum.style.fontWeight='800';
       const a = document.createElement('div'); a.className='avgnum'; a.textContent = 'Average'; a.style.color = color;
-      const anum = document.createElement('div'); anum.className='avgnum'; anum.textContent = Number.isFinite(song.avg)? song.avg.toFixed(2) : '—'; anum.style.color = color; anum.style.fontWeight='800';
+      const anum = document.createElement('div'); anum.className='avgnum'; anum.textContent = Number.isFinite(song.avg)? song.avg.toFixed(2) : '-'; anum.style.color = color; anum.style.fontWeight='800';
       top.appendChild(r); top.appendChild(rnum); top.appendChild(a); top.appendChild(anum);
       top.style.gridColumn = '2'; top.style.gridRow = '1'; top.style.justifySelf='center'; top.style.alignSelf='start';
       grid.appendChild(top);
 
-      // RIGHT RAIL (span all rows)
       const rightRail = document.createElement('div');
-      rightRail.className='panel';
-      rightRail.style.gridColumn = '3';
-      rightRail.style.gridRow = '1 / -1';
-      rightRail.appendChild((()=>{ const lbl=document.createElement('div'); lbl.className='posterScoresLabel'; lbl.textContent='Scores'; return lbl;})());
+      rightRail.className='panel'; rightRail.style.gridColumn = '3'; rightRail.style.gridRow = '1 / -1';
+      rightRail.appendChild((()=>{ const lbl=document.createElement('div'); lbl.textContent='Scores'; return lbl;})());
       rightRail.appendChild(buildScoresList(rightNames, song, 'rail-scores'));
       grid.appendChild(rightRail);
 
-      // FOOTER (bottom, center column only)
       const footer = document.createElement('div'); footer.className='footer';
       const ft = document.createElement('div'); ft.className='title'; ft.textContent = song.title; ft.style.color = color;
       const fa = document.createElement('div'); fa.className='artist'; fa.textContent = song.artist; fa.style.color = color;
       footer.appendChild(ft); footer.appendChild(fa);
+      if((songHasFlag(song,'anime') || songHasFlag(song,'game')) && song.sourceText){
+        const fs = document.createElement('div'); fs.className='source'; fs.textContent = song.sourceText; footer.appendChild(fs);
+      }
       footer.style.gridColumn = '2'; footer.style.gridRow = '3'; footer.style.justifySelf='center';
       grid.appendChild(footer);
 
@@ -803,9 +982,6 @@
       if(style === 'poster-sidebar') return renderPosterSidebar(song, color, rank);
       if(style === 'poster-split')   return renderPosterSplit(song, color, rank);
 
-      /* standard card */
-      const {maxNames, minNames} = getExtrema(song.scores);
-
       const card = document.createElement('article');
       card.className = 'card';
       card.dataset.id = song.id;
@@ -818,41 +994,17 @@
       const artist = document.createElement('div'); artist.className='artist'; artist.textContent = song.artist; artist.style.color = color;
       card.appendChild(title); card.appendChild(artist);
 
+      if((songHasFlag(song,'anime') || songHasFlag(song,'game')) && song.sourceText){
+        const src = document.createElement('div'); src.className='source'; src.textContent = song.sourceText; card.appendChild(src);
+      }
+
       const hero = document.createElement('div'); hero.className='hero';
       const rankEl = document.createElement('div'); rankEl.className='rank'; rankEl.textContent = placeText(rank); rankEl.style.color = color;
-      const avgEl = document.createElement('div'); avgEl.className='avgnum'; avgEl.textContent = Number.isFinite(song.avg)? song.avg.toFixed(2) : '—'; avgEl.style.color = color;
+      const avgEl = document.createElement('div'); avgEl.className='avgnum'; avgEl.textContent = Number.isFinite(song.avg)? song.avg.toFixed(2) : '-'; avgEl.style.color = color;
       hero.appendChild(rankEl); hero.appendChild(avgEl);
       card.appendChild(hero);
 
-      const scoresWrap = document.createElement('div'); scoresWrap.className='scores';
-      roster.forEach(person=>{
-        const rowL = document.createElement('div');
-        const badge = document.createElement('div'); badge.className='badge';
-        const img = personAvatarEl(person);
-        const nameSpan = document.createElement('span'); nameSpan.className='name'; nameSpan.textContent = person;
-        badge.appendChild(img); badge.appendChild(nameSpan);
-
-        const isSubmitter = (person && song.submitter && person.trim().toLowerCase()===song.submitter.trim().toLowerCase());
-        if(isSubmitter){ const m=document.createElement('span'); m.className='markSubmitter'; m.title='Submitter'; m.textContent='Submitter'; badge.appendChild(m); }
-        rowL.appendChild(badge);
-
-        const rowR = document.createElement('div'); rowR.className='score-cell';
-        const isFav = !!(song.favorites && song.favorites[person]);
-        if(isFav){ const star=document.createElement('span'); star.className='favStar'; star.textContent='★'; rowR.appendChild(star); }
-        const sv = document.createElement('span'); sv.className='score';
-        const isSubmitter2 = (person && song.submitter && person.trim().toLowerCase()===song.submitter.trim().toLowerCase());
-        if(isSubmitter2) sv.textContent='—';
-        else{
-          const val = song.scores[person];
-          sv.textContent = (val===undefined||val==='')? '—' : String(val);
-          if(maxNames.has(person)) sv.classList.add('high');
-          if(minNames.has(person)) sv.classList.add('low');
-        }
-        rowR.appendChild(sv);
-
-        scoresWrap.appendChild(rowL); scoresWrap.appendChild(rowR);
-      });
-      card.appendChild(scoresWrap);
+      card.appendChild(buildScoresList(roster, song));
 
       const actions = document.createElement('div'); actions.className='card-actions';
       const dl = document.createElement('button'); dl.textContent = 'Export PNG'; dl.type='button';
@@ -867,7 +1019,7 @@
 
     function showEmpty(){ const div = document.createElement('div'); div.className='empty'; div.id='emptyState'; div.textContent='No songs yet — add one above ✨'; cardsEl.appendChild(div); }
 
-    // Export helpers (transparent PNGs)
+    // ---------- Export helpers ----------
     async function downloadCardPNG(cardEl, filename){
       const actions = cardEl.querySelector('.card-actions');
       const prevDisplay = actions ? actions.style.display : '';
@@ -885,7 +1037,18 @@
       cardEl.style.backgroundColor = originalBG; cardEl.style.borderColor = originalBorder;
       if(actions) actions.style.display = prevDisplay;
     }
-
+    async function exportElementPNG(el, filename){
+      if(!el) return;
+      const hidden = [];
+      el.querySelectorAll('[data-hide-on-export]').forEach(node=>{
+        hidden.push({ node, prevDisplay: node.style.display });
+        node.style.display = 'none';
+      });
+      const canvas = await html2canvas(el, { backgroundColor:null, scale:2, useCORS:true, allowTaint:true });
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      hidden.forEach(({node, prevDisplay})=> node.style.display = prevDisplay);
+    }
     exportAllBtn.addEventListener('click', async()=>{
       const cards = [...document.querySelectorAll('.card')];
       for(const c of cards){
@@ -895,6 +1058,10 @@
         await downloadCardPNG(c, fname);
       }
     });
+    exportStatsChartBtn.addEventListener('click', ()=> exportElementPNG(statsChartEl, 'people-ranking-chart.png'));
+    exportStatsPanelBtn.addEventListener('click', ()=> exportElementPNG(statsSectionEl, 'people-stats.png'));
+    exportAffinityBtn?.addEventListener('click', ()=> exportElementPNG(affinitySectionEl, 'affinity.png'));
+    exportJointAffinityBtn?.addEventListener('click', ()=> exportElementPNG(jointAffinitySectionEl, 'joint-affinity.png'));
 
     layoutStyleEl.addEventListener('change', ()=>{ rerenderCards(); renderPeopleStats(); renderAffinity(); });
 
@@ -914,42 +1081,429 @@
         };
         songs.sort(fn);
         assignRanks();
-        cardsEl.innerHTML=''; clearEmptyState();
+        cardsEl.innerHTML=''; document.getElementById('emptyState')?.remove();
         songs.forEach(s=> cardsEl.appendChild(renderCard(s)));
-        document.querySelectorAll('.title, .artist, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
+        document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
       }
       renderPeopleStats(); renderAffinity();
     });
 
+    // ---------- Add / Clear ----------
     songForm.addEventListener('submit', (e)=>{
       e.preventDefault();
-      const title = titleEl.value.trim();
-      const artist = artistEl.value.trim();
-      const submitter = submitterEl.value.trim();
+      const title = norm(titleEl.value);
+      const artist = norm(artistEl.value);
+      const submitter = norm(submitterEl.value);
       const avgOverride = parseFloat(document.getElementById('avgOverride').value);
 
       const scores = {};
-      [...scoreInputsEl.querySelectorAll('input')].forEach(inp=>{
+      const favorites = {};
+      const flags = activeFlags();
+      const guesses = {};
+
+      [...scoreInputsEl.querySelectorAll('input[type="number"]')].forEach(inp=>{
         const who = inp.dataset.person; const val = inp.value.trim();
-        if(!inp.disabled && val!=='' && !Number.isNaN(parseFloat(val))) scores[who] = parseFloat(val);
+        if(!inp.disabled){
+          if(val==='') { /* blank handled in renderer */ }
+          else if(!Number.isNaN(parseFloat(val))) scores[who] = parseFloat(val);
+        }
+      });
+      // collect favorites from toggles
+      scoreInputsEl.querySelectorAll('.fav-toggle[aria-pressed="true"]').forEach(btn=>{
+        favorites[btn.dataset.person] = true;
       });
 
+      if(flags.anonymous){
+        scoreInputsEl.querySelectorAll('select.guess-input').forEach(sel=>{
+          const who = sel.dataset.person; const what = norm(sel.value);
+          if(what) guesses[who] = what;
+        });
+      }
+
       const avg = Number.isFinite(avgOverride) ? avgOverride : computeAverage(scores);
-      addSong({ id: uid(), title, artist, submitter, scores, favorites: {}, avg });
-      songForm.reset(); rebuildScoreInputs();
+      const sourceText = norm(sourceInputEl.value);
+      const song = {
+        id: uid(), title, artist, submitter,
+        avg, scores, favorites, sourceText,
+        guesses: flags.anonymous ? guesses : {},
+        flags: { ...flags }
+      };
+      addSong(song);
+      songForm.reset(); updateSourceFieldVisibility(); rebuildScoreInputs();
     });
 
     document.getElementById('clearForm').addEventListener('click', ()=>{
-      songForm.reset(); rebuildScoreInputs();
+      songForm.reset(); updateSourceFieldVisibility(); rebuildScoreInputs();
     });
 
-    /* ===== Bulk import ===== */
+    function addSong(data){
+      songs.push(data); rerenderCards(); renderPeopleStats(); renderAffinity(); renderJointAffinity();
+    }
+
+    function rerenderCards(){
+      cardsEl.innerHTML = ''; document.getElementById('emptyState')?.remove();
+      sortByEl.value = 'avg_desc';
+      refreshTieBreakers(); songs.sort(sortByRanking); assignRanks();
+      songs.forEach(song=> cardsEl.appendChild(renderCard(song)));
+      document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
+    }
+    function refreshAllCards(){
+      refreshTieBreakers(); songs.sort(sortByRanking); assignRanks();
+      document.querySelectorAll('.card').forEach(card=>{
+        const id = card.dataset.id; const song = songs.find(s=>s.id===id);
+        if(song){ card.replaceWith(renderCard(song)); }
+      });
+      document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
+    }
+
+    // ---------- People Stats / Affinity ----------
+    function computePeopleStats(){
+      const base = {};
+      roster.forEach(name=>{
+        base[name] = {
+          name,
+          givenVals: [],
+          receivedVals: [],
+          favMarksReceived: 0,
+          greensGiven: 0,
+          redsGiven: 0,
+          correctGuesses: 0
+        };
+      });
+
+      songs.forEach(song=>{
+        const sub = norm(song.submitter);
+        // received + favorites
+        if(sub && base[sub]){
+          Object.entries(song.scores || {}).forEach(([voter,val])=>{
+            const num = Number(val);
+            if(Number.isFinite(num) && lc(voter) !== lc(sub)){
+              base[sub].receivedVals.push(num);
+            }
+          });
+          const favs = song.favorites || {};
+          Object.entries(favs).forEach(([voter,flag])=>{
+            if(flag && lc(voter) !== lc(sub)) base[sub].favMarksReceived += 1;
+          });
+        }
+        // voters: given + green/red
+        const {maxNames, minNames} = getExtrema(song.scores || {});
+        roster.forEach(person=>{
+          const isSubmitter = sub && lc(person) === lc(sub);
+          const val = Number(song.scores?.[person]);
+          if(!isSubmitter && Number.isFinite(val)) base[person].givenVals.push(val);
+        });
+        maxNames.forEach(n=>{ if(base[n]) base[n].greensGiven += 1; });
+        minNames.forEach(n=>{ if(base[n]) base[n].redsGiven += 1; });
+
+        // anonymous guesses → correctness
+        if(songHasFlag(song,'anonymous')){
+          Object.entries(song.guesses || {}).forEach(([voter, guessedName])=>{
+            if(lc(guessedName) === lc(sub) && lc(voter)!==lc(sub)){
+              base[voter].correctGuesses += 1;
+            }
+          });
+        }
+      });
+
+      const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : NaN;
+
+      ensureCommentKeys();
+
+      return Object.values(base).map(p=>({
+        name: p.name,
+        avgGiven: avg(p.givenVals),
+        avgReceived: avg(p.receivedVals),
+        favorited: p.favMarksReceived,
+        greensGiven: p.greensGiven,
+        redsGiven: p.redsGiven,
+        comments: Number.isFinite(commentCounts[p.name]) ? commentCounts[p.name] : (parseInt(commentCounts[p.name],10) || 0),
+        correctGuesses: p.correctGuesses || 0
+      }));
+    }
+
+    function renderPeopleStats(){
+      const stats = computePeopleStats();
+      const ranked = [...stats].sort((a,b)=>{
+        const A = Number.isFinite(a.avgReceived) ? a.avgReceived : -Infinity;
+        const B = Number.isFinite(b.avgReceived) ? b.avgReceived : -Infinity;
+        return B - A;
+      });
+
+      // Max/min for highlighting
+      const recvVals = ranked.map(r => Number.isFinite(r.avgReceived) ? r.avgReceived : null).filter(v=>v!=null);
+      const globalMaxRecv = recvVals.length ? Math.max(...recvVals) : NaN;
+      const globalMinRecv = recvVals.length ? Math.min(...recvVals) : NaN;
+
+      const givenVals = ranked.map(r => Number.isFinite(r.avgGiven) ? r.avgGiven : null).filter(v=>v!=null);
+      const globalMaxGiven = givenVals.length ? Math.max(...givenVals) : NaN;
+      const globalMinGiven = givenVals.length ? Math.min(...givenVals) : NaN;
+
+      const favVals = ranked.map(r => r.favorited || 0);
+      const globalMaxFav = favVals.length ? Math.max(...favVals) : 0;
+
+      const commentsVals = ranked.map(r => Number.isFinite(r.comments) ? r.comments : 0);
+      const globalMaxComments = commentsVals.length ? Math.max(...commentsVals) : 0;
+
+      const guessedVals = ranked.map(r => r.correctGuesses || 0);
+      const maxGuessed = guessedVals.length ? Math.max(...guessedVals) : 0;
+      const minGuessed = guessedVals.length ? Math.min(...guessedVals) : 0;
+      const anyGuesses = guessedVals.some(v=>v>0);
+
+      // Chart (Avg received)
+      statsChartEl.innerHTML = '';
+      const maxVal = 10;
+      ranked.forEach((row, idx)=>{
+        const rowEl = document.createElement('div');
+        rowEl.className = 'chart-row';
+        const left = document.createElement('div');
+        left.className = 'chart-name';
+        left.style.display = 'flex'; left.style.alignItems = 'center'; left.style.gap = '6px';
+        const img = personAvatarEl(row.name); img.style.width='18px'; img.style.height='18px';
+        const label = document.createElement('span'); label.textContent = `${idx+1}. ${row.name}`;
+        left.appendChild(img); left.appendChild(label);
+        rowEl.appendChild(left);
+
+        const wrap = document.createElement('div'); wrap.className = 'chart-bar-wrap';
+        const bar = document.createElement('div'); bar.className = 'chart-bar'; bar.style.background = chartGradient(statsColor);
+        const ratio = Number.isFinite(row.avgReceived) ? Math.max(0, Math.min(1, row.avgReceived / maxVal)) : 0;
+        bar.style.width = (ratio * 100) + '%';
+        const val = document.createElement('div'); val.className = 'chart-val'; val.textContent = Number.isFinite(row.avgReceived) ? row.avgReceived.toFixed(2) : '-';
+        wrap.appendChild(bar); wrap.appendChild(val);
+        rowEl.appendChild(wrap);
+        statsChartEl.appendChild(rowEl);
+      });
+
+      // Table
+      statsTableEl.innerHTML = '';
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      thead.innerHTML = `
+        <tr>
+          <th>Rank</th>
+          <th>Person</th>
+          <th title="Average score others gave to their submissions">Avg (received)</th>
+          <th title="Average score they gave to others">Avg (given)</th>
+          <th title="Total favorites their submissions received">Favorited ★</th>
+          <th title="Manual count you set">🗣️ Comments</th>
+          ${anyGuesses ? '<th title="Correct anonymous guesses">Guessed ✓</th>' : ''}
+          <th>Greens</th>
+          <th>Reds</th>
+        </tr>`;
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      ranked.forEach((r, i)=>{
+        const tr = document.createElement('tr');
+
+        const rankCell = document.createElement('td'); rankCell.innerHTML = `<span class="rank-badge">${i+1}</span>`;
+
+        const nm = document.createElement('td');
+        nm.style.display = 'flex'; nm.style.alignItems = 'center'; nm.style.gap = '8px';
+        const nmImg = personAvatarEl(r.name); nmImg.style.width='22px'; nmImg.style.height='22px';
+        const nmTxt = document.createElement('span'); nmTxt.textContent = r.name;
+        nm.appendChild(nmImg); nm.appendChild(nmTxt);
+
+        const recv = document.createElement('td'); recv.className='pill';
+        if(Number.isFinite(r.avgReceived)){
+          recv.textContent = r.avgReceived.toFixed(2);
+          if(r.avgReceived === globalMaxRecv) recv.classList.add('green');
+          if(r.avgReceived === globalMinRecv) recv.classList.add('red');
+        } else { recv.textContent = '-'; }
+
+        const given = document.createElement('td'); given.className='pill';
+        if (Number.isFinite(r.avgGiven)) {
+          given.textContent = r.avgGiven.toFixed(2);
+          if (r.avgGiven === globalMaxGiven) given.classList.add('green');
+          if (r.avgGiven === globalMinGiven) given.classList.add('red');
+        } else { given.textContent = '-'; }
+
+        const fav = document.createElement('td'); fav.className='pill'; fav.textContent = r.favorited || 0;
+        if((r.favorited||0) === globalMaxFav && globalMaxFav > 0) fav.classList.add('gold');
+
+        const commentsCell = document.createElement('td'); commentsCell.className='pill';
+        const commentsVal = Number.isFinite(r.comments) ? r.comments : 0;
+        commentsCell.textContent = commentsVal;
+        if (commentsVal === globalMaxComments && globalMaxComments > 0) commentsCell.classList.add('green');
+
+        tr.append(rankCell, nm, recv, given, fav, commentsCell);
+
+        if(anyGuesses){
+          const guessed = document.createElement('td'); guessed.className='pill';
+          const gval = r.correctGuesses || 0;
+          guessed.textContent = gval;
+          if (maxGuessed !== minGuessed) {
+            if (gval === maxGuessed) guessed.classList.add('green');
+            if (gval === minGuessed) guessed.classList.add('red');
+          }
+          tr.appendChild(guessed);
+        }
+
+        const greens = document.createElement('td'); greens.className='pill'; greens.textContent = r.greensGiven ?? 0;
+        const reds   = document.createElement('td'); reds.className='pill';   reds.textContent   = r.redsGiven ?? 0;
+
+        tr.append(greens, reds);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      statsTableEl.appendChild(table);
+    }
+
+    // ---------- Affinity & Joint Affinity ----------
+    function computeAffinity(){
+      const submitterSet = new Set();
+      songs.forEach(s=>{ const sub=norm(s.submitter); if(sub) submitterSet.add(sub); });
+      const submitters = [...submitterSet];
+
+      const matrix = {};
+      roster.forEach(v=>{ matrix[v] = {}; submitters.forEach(s=> matrix[v][s] = {sum:0,count:0}); });
+
+      songs.forEach(song=>{
+        const sub = norm(song.submitter);
+        if(!sub) return;
+        Object.entries(song.scores||{}).forEach(([voter, val])=>{
+          const num = Number(val);
+          if(Number.isFinite(num) && lc(voter) !== lc(sub)){
+            matrix[voter] ??= {};
+            matrix[voter][sub] ??= {sum:0,count:0};
+            matrix[voter][sub].sum += num;
+            matrix[voter][sub].count += 1;
+          }
+        });
+      });
+
+      const rows = roster.map(voter=>{
+        const values = {};
+        submitters.forEach(sub=>{
+          const cell = matrix[voter]?.[sub];
+          values[sub] = (cell && cell.count) ? (cell.sum / cell.count) : NaN;
+        });
+        return { voter, values };
+      });
+
+      const maxVal = Math.max(1, ...rows.flatMap(r=> submitters.map(s=> Number.isFinite(r.values[s]) ? r.values[s] : 0)));
+      return { submitters, rows, maxVal };
+    }
+
+    function renderAffinity(){
+      const { submitters, rows } = computeAffinity();
+      affinityTableEl.innerHTML = '';
+
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      thead.innerHTML =
+        '<tr><th>Voter ↓ / Submitter →</th>' +
+        submitters.map(s => '<th>' + s + '</th>').join('') +
+        '</tr>';
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        const head = document.createElement('td'); head.textContent = r.voter; tr.appendChild(head);
+
+        const rowVals = submitters.map(s => r.values[s]).filter(v => Number.isFinite(v));
+        const rowMax = rowVals.length ? Math.max(...rowVals) : NaN;
+        const rowMin = rowVals.length ? Math.min(...rowVals) : NaN;
+
+        submitters.forEach(sub => {
+          const val = r.values[sub];
+          const td = document.createElement('td');
+          const span = document.createElement('span'); span.className = 'aff-num';
+          if(Number.isFinite(val)){
+            span.textContent = val.toFixed(2);
+            if(val === rowMax) span.classList.add('best');
+            if(val === rowMin) span.classList.add('worst');
+          } else {
+            span.textContent = '-';
+          }
+          td.appendChild(span);
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      affinityTableEl.appendChild(table);
+    }
+
+    function computeJointAffinity(){
+      const { submitters, rows } = computeAffinity();
+      const look = new Map(rows.map(r => [r.voter, r.values]));
+      const pairs = [];
+      for(let i=0; i<submitters.length; i++){
+        for(let j=i+1; j<submitters.length; j++){
+          const A = submitters[i], B = submitters[j];
+          const aToB = look.get(A)?.[B];
+          const bToA = look.get(B)?.[A];
+          const aOK = Number.isFinite(aToB), bOK = Number.isFinite(bToA);
+          const joint = (aOK && bOK) ? (aToB + bToA)/2 : NaN;
+          pairs.push({ A, B, aToB, bToA, joint });
+        }
+      }
+      return pairs;
+    }
+
+    function renderJointAffinity(){
+      const pairs = computeJointAffinity().filter(p => Number.isFinite(p.joint)).sort((a,b) => b.joint - a.joint);
+
+      jointAffinityTableEl.innerHTML = '';
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      thead.innerHTML = `
+        <tr>
+          <th>Rank</th>
+          <th>Pair</th>
+          <th title="Average A gave to B">A→B</th>
+          <th title="Average B gave to A">B→A</th>
+          <th title="(A→B + B→A)/2">Joint Avg</th>
+        </tr>`;
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      pairs.forEach((p, idx) => {
+        const tr = document.createElement('tr');
+
+        const rank = document.createElement('td'); rank.innerHTML = `<span class="rank-badge">${idx+1}</span>`;
+
+        const pair = document.createElement('td');
+        const wrap = document.createElement('div');
+        wrap.style.display = 'grid'; wrap.style.gridTemplateColumns = '1fr auto 1fr'; wrap.style.alignItems = 'center'; wrap.style.columnGap = '10px';
+
+        const left = document.createElement('div'); left.style.display = 'flex'; left.style.alignItems = 'center'; left.style.justifyContent = 'center'; left.style.gap = '6px';
+        const aImg = personAvatarEl(p.A); aImg.style.width='22px'; aImg.style.height='22px';
+        const aName = document.createElement('span'); aName.textContent = p.A;
+        left.appendChild(aImg); left.appendChild(aName);
+
+        const sep = document.createElement('span'); sep.textContent = '↔'; sep.style.textAlign = 'center';
+
+        const right = document.createElement('div'); right.style.display = 'flex'; right.style.alignItems = 'center'; right.style.justifyContent = 'center'; right.style.gap = '6px';
+        const bName = document.createElement('span'); bName.textContent = p.B;
+        const bImg = personAvatarEl(p.B); bImg.style.width='22px'; bImg.style.height='22px'; bImg.style.marginLeft='2px';
+        right.appendChild(bName); right.appendChild(bImg);
+
+        wrap.appendChild(left); wrap.appendChild(sep); wrap.appendChild(right);
+        pair.appendChild(wrap);
+
+        const a2b = document.createElement('td'); a2b.className='pill'; a2b.textContent = Number.isFinite(p.aToB) ? p.aToB.toFixed(2) : '-';
+        const b2a = document.createElement('td'); b2a.className='pill'; b2a.textContent = Number.isFinite(p.bToA) ? p.bToA.toFixed(2) : '-';
+        const joint = document.createElement('td'); joint.className='pill'; joint.textContent = p.joint.toFixed(2);
+
+        tr.append(rank, pair, a2b, b2a, joint);
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      jointAffinityTableEl.appendChild(table);
+    }
+
+    // ---------- Bulk import (scores) ----------
     function autoDelimiter(sample){
       if(delimiterEl.value !== 'auto') return delimiterEl.value;
-      const counts = [',','\t',';'].map(d=>({d, c:(sample.match(new RegExp(d==='\t'?'\\t':d,'g'))||[]).length}))
-        .sort((a,b)=>b.c-a.c);
+      const counts = [',','\t',';'].map(d=>({d, c:(sample.match(new RegExp(d==='\t'?'\\t':d,'g'))||[]).length})).sort((a,b)=>b.c-a.c);
       return (counts[0]?.c>0)? counts[0].d : '\t';
     }
+
     function parseCSV(text, delim){
       const out = []; let row = [], val = '', inQuotes = false;
       for(let i=0;i<text.length;i++){
@@ -970,7 +1524,9 @@
       if(out.length && out[out.length-1].every(c=>c==='')) out.pop();
       return out;
     }
+
     function headersToMap(headers){ const map = {}; headers.forEach((h,idx)=>{ map[lc(h)] = idx; }); return map; }
+
     function matchRosterHeader(h){
       const key = lc(h);
       let exact = roster.find(r => lc(r) === key);
@@ -979,22 +1535,25 @@
       exact = roster.find(r => lc(r).replace(/[^a-z0-9]/g,'') === relax);
       return exact || null;
     }
+
     function importRows(rows, hasHeader){
       if(!rows.length) return 0;
       let headers = [], dataRows = rows;
 
       if(hasHeader){ headers = rows[0]; dataRows = rows.slice(1); }
-      else { headers = ['song','artist','submitter', ...roster]; }
+      else { headers = ['submitter','song','artist', ...roster]; }
 
       const hmap = headersToMap(headers);
       const titleIdx = hmap['song'] ?? hmap['title'] ?? 0;
       const artistIdx = hmap['artist'] ?? 1;
-      const submitterIdx = hmap['submitter'] ?? 2;
+      const submitterIdx = hmap['submitter'] ?? hmap['nominator'] ?? 2;
+      const animeIdx = hmap['anime'];
+      const gameIdx = hmap['game'];
       const averageIdx = hmap['average'];
 
       const scoreCols = []; const newScorers = [];
       headers.forEach((h,idx)=>{
-        if(idx===titleIdx || idx===artistIdx || idx===submitterIdx || idx===averageIdx) return;
+        if(idx===titleIdx || idx===artistIdx || idx===submitterIdx || idx===averageIdx || idx===animeIdx || idx===gameIdx) return;
         const headerName = norm(h);
         if(!headerName || RESERVED_HEADERS.has(lc(headerName))) return;
         const who = matchRosterHeader(headerName);
@@ -1019,11 +1578,18 @@
           const { num, favorite } = parseScoreCell(raw);
           if(Number.isFinite(num)) { scores[sc.who] = num; if(favorite) favorites[sc.who] = true; }
         });
+
         let avg = computeAverage(scores);
         if(averageIdx!==undefined){
           const rawAvg = parseFloat(r[averageIdx]); if(Number.isFinite(rawAvg)) avg = rawAvg;
         }
-        addSong({ id: uid(), title, artist, submitter, scores, favorites, avg });
+
+        const flags = { anime:false, game:false, anonymous:false };
+        let sourceText = '';
+        if(animeIdx !== undefined && norm(r[animeIdx])){ flags.anime = true; sourceText = norm(r[animeIdx]); }
+        if(gameIdx  !== undefined && norm(r[gameIdx])){ flags.game  = true; sourceText = norm(r[gameIdx]); }
+
+        addSong({ id: uid(), title, artist, submitter, scores, favorites, avg, flags, sourceText, guesses:{} });
         added++;
       });
       return added;
@@ -1033,7 +1599,6 @@
       bulkText.value = ''; hasHeaderEl.value = 'yes'; delimiterEl.value = 'auto'; bulkDialog.showModal();
     });
     cancelBulkBtn.addEventListener('click', ()=> bulkDialog.close());
-
     bulkForm.addEventListener('submit', (e)=>{
       e.preventDefault();
       const text = bulkText.value.trim();
@@ -1042,12 +1607,89 @@
       const rows = parseCSV(text.replace(/\r\n?/g,'\n'), delim);
       const added = importRows(rows, hasHeaderEl.value==='yes');
       bulkDialog.close();
-      if(added===0) alert('No rows imported. Check your headers: song, artist, submitter, and columns named after roster members. You can add * after a score to mark it as a favorite.');
+      if(added===0) alert('No rows imported. Check headers: Submitter/Nominator, Song, Artist, optional Anime/Game/Average, and columns named after roster members. Add * after a score to mark a favorite.');
     });
 
-    /* Save a self-contained HTML snapshot */
+    // ---------- Bulk import (guesses) ----------
+    function autoDelimiterGuess(sample){
+      if(guessDelimiterEl.value !== 'auto') return guessDelimiterEl.value;
+      const counts = [',','\t',';'].map(d=>({d, c:(sample.match(new RegExp(d==='\t'?'\\t':d,'g'))||[]).length})).sort((a,b)=>b.c-a.c);
+      return (counts[0]?.c>0)? counts[0].d : '\t';
+    }
+
+    function importGuesses(rows, hasHeader){
+      if(!rows.length) return 0;
+      let headers = [], dataRows = rows;
+      if(hasHeader){ headers = rows[0]; dataRows = rows.slice(1); }
+      else { headers = ['submitter','song','artist', ...roster]; }
+
+      const hmap = headersToMap(headers);
+      const titleIdx = hmap['song'] ?? hmap['title'] ?? 1;
+      const artistIdx = hmap['artist'] ?? 2;
+      const submitterIdx = hmap['submitter'] ?? hmap['nominator'] ?? 0;
+
+      // Guess columns are the rest (match roster loosely)
+      const guessCols = [];
+      headers.forEach((h, idx)=>{
+        if(idx===titleIdx || idx===artistIdx || idx===submitterIdx) return;
+        const who = matchRosterHeader(h);
+        if(who) guessCols.push({ idx, who });
+      });
+
+      let attached = 0;
+      dataRows.forEach(r=>{
+        const title = norm(r[titleIdx]);
+        const artist = norm(r[artistIdx]);
+        const submitter = norm(r[submitterIdx]);
+        if(!title) return;
+
+        // Find matching song
+        let song = songs.find(s => lc(s.title)===lc(title) && lc(s.artist)===lc(artist));
+        if(!song){
+          // fallback: match by title + submitter if artist missing
+          song = songs.find(s => lc(s.title)===lc(title) && lc(s.submitter)===lc(submitter));
+        }
+        if(!song) return;
+
+        song.flags ||= {};
+        song.flags.anonymous = true;
+        song.guesses ||= {};
+        guessCols.forEach(gc=>{
+          const raw = norm(r[gc.idx]);
+          if(!raw || isBlankScore(raw)) return;
+          song.guesses[gc.who] = raw;
+        });
+        attached++;
+      });
+      return attached;
+    }
+
+    openBulkGuessesBtn.addEventListener('click', ()=>{
+      bulkGuessText.value = ''; guessHasHeaderEl.value = 'yes'; guessDelimiterEl.value = 'auto'; bulkGuessDialog.showModal();
+    });
+    cancelBulkGuessBtn.addEventListener('click', ()=> bulkGuessDialog.close());
+    bulkGuessForm.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const text = bulkGuessText.value.trim();
+      if(!text){ bulkGuessDialog.close(); return; }
+      const delim = autoDelimiterGuess(text);
+      const rows = parseCSV(text.replace(/\r\n?/g,'\n'), delim);
+      const attached = importGuesses(rows, guessHasHeaderEl.value==='yes');
+      bulkGuessDialog.close();
+      if(attached===0) alert('No guesses imported. We match by Song+Artist (fallback Song+Submitter). Ensure headers include Nominator/Submitter, Song, Artist, and columns named for roster members.');
+      refreshAllCards(); renderPeopleStats();
+    });
+
+    // ---------- Snapshot (save .html) ----------
     function buildSnapshotHTML(){
-      const snapshot = { roster, photos, songs, layout: layoutStyleEl.value, sortBy: sortByEl.value };
+      const snapshot = {
+        roster, photos, songs,
+        layout: layoutStyleEl.value,
+        sortBy: sortByEl.value,
+        commentCounts,
+        flags: activeFlags(),
+        guessDisplayMode
+      };
       const injector =
 `<script id="snapshot-applier">
   (function(){
@@ -1057,10 +1699,22 @@
         try { roster = snap.roster || []; } catch(e){}
         try { photos = snap.photos || {}; } catch(e){}
         try { songs = snap.songs || []; } catch(e){}
+        try { commentCounts = snap.commentCounts || {}; } catch(e){}
+        try {
+          var menu = document.getElementById('modeMenu');
+          (['anime','game','anonymous']).forEach(function(f){
+            var btn = menu.querySelector('[data-flag="'+f+'"]');
+            if(btn && snap.flags && snap.flags[f]) btn.classList.add('active');
+          });
+        } catch(e){}
         try { document.getElementById('layoutStyle').value = snap.layout || 'standard'; } catch(e){}
         try { document.getElementById('sortBy').value = snap.sortBy || 'avg_desc'; } catch(e){}
+        try {
+          var gd = document.getElementById('guessDisplay');
+          if(gd && snap.guessDisplayMode){ gd.value = snap.guessDisplayMode; }
+        } catch(e){}
         try { document.getElementById('peopleCount').value = roster.length; } catch(e){}
-        try { renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); rerenderCards(); renderPeopleStats(); renderAffinity(); } catch(e){}
+        try { renderRosterInputs(); updateSourceFieldVisibility(); rebuildScoreInputs(); fillDatalist(); rerenderCards(); renderPeopleStats(); renderAffinity(); renderJointAffinity(); } catch(e){}
       });
     }catch(err){ console.error('Snapshot load failed', err); }
   })();
@@ -1068,6 +1722,7 @@
       const html = document.documentElement.outerHTML.replace('</body>', injector + '\n</body>');
       return html;
     }
+
     function downloadSnapshot(){
       const html = buildSnapshotHTML();
       const blob = new Blob([html], {type: 'text/html'});
@@ -1079,450 +1734,52 @@
     }
     downloadPageBtn.addEventListener('click', downloadSnapshot);
 
-    /* ====== People Stats logic ====== */
-
-    // Compute per-person stats:
-    // - avgGiven: average of scores they gave (excluding songs they submitted)
-    // - greensGiven: count of times they were the max scorer on a song
-    // - redsGiven: count of times they were the min scorer on a song
-    // - submitAvg: average received for their submitted songs (song.avg)
-    // - submitRankAvg: average rank (1 = best) of their submitted songs
-	// Avg (given)  = average of scores a person gave to others (never their own songs)
-	// Avg (received) = average of ALL individual scores others gave to this person's submissions
-	// Favorited = total number of favorite marks their submissions received (counts multiples)
-	// Greens/Reds (given) = times they were the highest/lowest voter on any song
-	function computePeopleStats(){
-	  const base = {};
-	  roster.forEach(name=>{
-		base[name] = {
-		  name,
-		  givenVals: [],
-		  receivedVals: [],
-		  favMarksReceived: 0,
-		  greensGiven: 0,
-		  redsGiven: 0
-		};
-	  });
-
-	  songs.forEach(song=>{
-		const sub = (song.submitter||'').trim();
-
-		// For submitter: collect received votes + favorite marks
-		if(sub && base[sub]){
-		  Object.entries(song.scores || {}).forEach(([voter,val])=>{
-			const num = Number(val);
-			if(Number.isFinite(num) && lc(voter) !== lc(sub)){
-			  base[sub].receivedVals.push(num);
-			}
-		  });
-		  const favs = song.favorites || {};
-		  Object.entries(favs).forEach(([voter,flag])=>{
-			if(flag && lc(voter) !== lc(sub)) base[sub].favMarksReceived += 1;
-		  });
-		}
-
-		// For voters: values they gave + green/red counts
-		const {maxNames, minNames} = getExtrema(song.scores || {});
-		roster.forEach(person=>{
-		  const isSubmitter = sub && lc(person) === lc(sub);
-		  const val = Number(song.scores?.[person]);
-		  if(!isSubmitter && Number.isFinite(val)){
-			base[person].givenVals.push(val);
-		  }
-		});
-		maxNames.forEach(n=>{ if(base[n]) base[n].greensGiven += 1; });
-		minNames.forEach(n=>{ if(base[n]) base[n].redsGiven += 1; });
-	  });
-
-	  const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : NaN;
-
-	  return Object.values(base).map(p=>({
-		name: p.name,
-		avgGiven: avg(p.givenVals),
-		avgReceived: avg(p.receivedVals),
-		favorited: p.favMarksReceived,   // <-- total favorites received
-		greensGiven: p.greensGiven,
-		redsGiven: p.redsGiven
-	  }));
-	}
-
-
-	function renderPeopleStats(){
-	  const stats = computePeopleStats();
-
-	  // Rank by Avg (received)
-	  const ranked = [...stats].sort((a,b)=>{
-		const A = Number.isFinite(a.avgReceived) ? a.avgReceived : -Infinity;
-		const B = Number.isFinite(b.avgReceived) ? b.avgReceived : -Infinity;
-		return B - A;
-	  });
-
-	  // For coloring Avg(received) top/bottom & Favorited gold
-	  const recvVals = ranked.map(r => Number.isFinite(r.avgReceived) ? r.avgReceived : null).filter(v=>v!=null);
-	  const globalMaxRecv = recvVals.length ? Math.max(...recvVals) : NaN;
-	  const globalMinRecv = recvVals.length ? Math.min(...recvVals) : NaN;
-	  const favVals = ranked.map(r => r.favorited || 0);
-	  const globalMaxFav = favVals.length ? Math.max(...favVals) : 0;
-	  
-	// For coloring Avg (given)
-	const givenVals = ranked.map(r => Number.isFinite(r.avgGiven) ? r.avgGiven : null).filter(v=>v!=null);
-	const globalMaxGiven = givenVals.length ? Math.max(...givenVals) : NaN;
-	const globalMinGiven = givenVals.length ? Math.min(...givenVals) : NaN;
-	
-	// Extremes for Greens/Reds counts
-	const greensVals = ranked.map(r => r.greensGiven ?? 0);
-	const redsVals   = ranked.map(r => r.redsGiven ?? 0);
-	const maxGreens = greensVals.length ? Math.max(...greensVals) : 0;
-	const minGreens = greensVals.length ? Math.min(...greensVals) : 0;
-	const maxReds   = redsVals.length ? Math.max(...redsVals)   : 0;
-	const minReds   = redsVals.length ? Math.min(...redsVals)   : 0;
-
-	  // --- Chart (bars show Avg Received) ---
-	  statsChartEl.innerHTML = '';
-	  const maxVal = 10; // fixed scale 0..10
-
-	  ranked.forEach((row, idx)=>{
-		const rowEl = document.createElement('div');
-		rowEl.className = 'chart-row';
-
-		// Left label with avatar + name
-		const left = document.createElement('div');
-		left.className = 'chart-name';
-		left.style.display = 'flex';
-		left.style.alignItems = 'center';
-		left.style.gap = '6px';
-		const img = personAvatarEl(row.name); img.style.width='18px'; img.style.height='18px';
-		const label = document.createElement('span'); label.textContent = `${idx+1}. ${row.name}`;
-		left.appendChild(img); left.appendChild(label);
-		rowEl.appendChild(left);
-
-		// Bar (color selectable)
-		const wrap = document.createElement('div');
-		wrap.className = 'chart-bar-wrap';
-
-		const bar = document.createElement('div');
-		bar.className = 'chart-bar';
-		bar.style.background = chartGradient(statsColor);
-
-		const ratio = Number.isFinite(row.avgReceived) ? Math.max(0, Math.min(1, row.avgReceived / maxVal)) : 0;
-		bar.style.width = (ratio * 100) + '%';
-
-		const val = document.createElement('div');
-		val.className = 'chart-val';
-		val.textContent = Number.isFinite(row.avgReceived) ? row.avgReceived.toFixed(2) : '—';
-
-		wrap.appendChild(bar);
-		wrap.appendChild(val);
-		rowEl.appendChild(wrap);
-		statsChartEl.appendChild(rowEl);
-	  });
-
-	  // --- Table ---
-	  statsTableEl.innerHTML = '';
-	  const table = document.createElement('table');
-	  const thead = document.createElement('thead');
-	  thead.innerHTML = `
-		<tr>
-		  <th>Rank</th>
-		  <th>Person</th>
-		  <th title="Average score others gave to their submissions">Avg (received)</th>
-		  <th title="Average score they gave to others">Avg (given)</th>
-		  <th title="Total favorites their submissions received">Favorited ★</th>
-		  <th>Greens</th>
-		  <th>Reds</th>
-		</tr>`;
-	  table.appendChild(thead);
-
-	  const tbody = document.createElement('tbody');
-	  ranked.forEach((r, i)=>{
-		const tr = document.createElement('tr');
-
-		const rankCell = document.createElement('td'); rankCell.innerHTML = `<span class="rank-badge">${i+1}</span>`;
-
-		// Name cell with avatar
-		const nm = document.createElement('td');
-		nm.style.display = 'flex'; nm.style.alignItems = 'center'; nm.style.gap = '8px';
-		const nmImg = personAvatarEl(r.name); nmImg.style.width='22px'; nmImg.style.height='22px';
-		const nmTxt = document.createElement('span'); nmTxt.textContent = r.name;
-		nm.appendChild(nmImg); nm.appendChild(nmTxt);
-
-		const recv = document.createElement('td'); recv.className='pill';
-		if(Number.isFinite(r.avgReceived)){
-		  recv.textContent = r.avgReceived.toFixed(2);
-		  if(r.avgReceived === globalMaxRecv) recv.classList.add('green');
-		  if(r.avgReceived === globalMinRecv) recv.classList.add('red');
-		} else {
-		  recv.textContent = '—';
-		}
-
-		const given = document.createElement('td');
-		given.className = 'pill';
-		if (Number.isFinite(r.avgGiven)) {
-		  given.textContent = r.avgGiven.toFixed(2);
-		  // color by Avg (given): green = highest, red = lowest (ties color multiple rows)
-		  if (r.avgGiven === globalMaxGiven) given.classList.add('green');
-		  if (r.avgGiven === globalMinGiven) given.classList.add('red');
-		} else {
-		  given.textContent = '—';
-		}
-
-
-		const fav = document.createElement('td'); fav.className='pill'; fav.textContent = r.favorited || 0;
-		if((r.favorited||0) === globalMaxFav && globalMaxFav > 0) fav.classList.add('gold');
-
-		// Greens count (color only for extremes)
-		const greens = document.createElement('td');
-		greens.className = 'pill';
-		const g = r.greensGiven ?? 0;
-		greens.textContent = g;
-		if (greensVals.length && maxGreens !== minGreens) {
-		  if (g === maxGreens) greens.classList.add('green'); // highest → green
-		  if (g === minGreens) greens.classList.add('red');   // lowest  → red
-		}
-
-		// Reds count (semantic: highest → red, lowest → green)
-		const reds = document.createElement('td');
-		reds.className = 'pill';
-		const rd = r.redsGiven ?? 0;
-		reds.textContent = rd;
-		if (redsVals.length && maxReds !== minReds) {
-		  if (rd === maxReds) reds.classList.add('red');     // highest → red
-		  if (rd === minReds) reds.classList.add('green');   // lowest  → green
-		}
-
-
-		tr.append(rankCell,nm,recv,given,fav,greens,reds);
-		tbody.appendChild(tr);
-	  });
-	  table.appendChild(tbody);
-	  statsTableEl.appendChild(table);
-	}
-
-
-
-	// Build voter->submitter average matrix
-	function computeAffinity(){
-	  const submitterSet = new Set();
-	  songs.forEach(s=>{ const sub=(s.submitter||'').trim(); if(sub) submitterSet.add(sub); });
-	  const submitters = [...submitterSet];
-
-	  // matrix[voter][submitter] = {sum,count}
-	  const matrix = {};
-	  roster.forEach(v=>{ matrix[v] = {}; submitters.forEach(s=> matrix[v][s] = {sum:0,count:0}); });
-
-	  songs.forEach(song=>{
-		const sub = (song.submitter||'').trim();
-		if(!sub) return;
-		Object.entries(song.scores||{}).forEach(([voter, val])=>{
-		  const num = Number(val);
-		  if(Number.isFinite(num) && lc(voter) !== lc(sub)){
-			matrix[voter] ??= {};
-			matrix[voter][sub] ??= {sum:0,count:0};
-			matrix[voter][sub].sum += num;
-			matrix[voter][sub].count += 1;
-		  }
-		});
-	  });
-
-	  const rows = roster.map(voter=>{
-		const values = {};
-		submitters.forEach(sub=>{
-		  const cell = matrix[voter]?.[sub];
-		  values[sub] = (cell && cell.count) ? (cell.sum / cell.count) : NaN;
-		});
-		return { voter, values };
-	  });
-
-	  const maxVal = Math.max(1, ...rows.flatMap(r=> submitters.map(s=> Number.isFinite(r.values[s]) ? r.values[s] : 0)));
-	  return { submitters, rows, maxVal };
-	}
-
-	function renderAffinity(){
-	  const { submitters, rows } = computeAffinity();
-	  affinityTableEl.innerHTML = '';
-
-	  const table = document.createElement('table');
-
-	  const thead = document.createElement('thead');
-	  thead.innerHTML =
-		'<tr><th>Voter ↓ / Submitter →</th>' +
-		submitters.map(s => '<th>' + s + '</th>').join('') +
-		'</tr>';
-	  table.appendChild(thead);
-
-	  const tbody = document.createElement('tbody');
-	  rows.forEach(r => {
-		const tr = document.createElement('tr');
-		const head = document.createElement('td');
-		head.textContent = r.voter;
-		tr.appendChild(head);
-
-		const rowVals = submitters.map(s => r.values[s]).filter(v => Number.isFinite(v));
-		const rowMax = rowVals.length ? Math.max(...rowVals) : NaN;
-		const rowMin = rowVals.length ? Math.min(...rowVals) : NaN;
-
-		submitters.forEach(sub => {
-		  const val = r.values[sub];
-		  const td = document.createElement('td');
-		  const span = document.createElement('span');
-		  span.className = 'aff-num';
-		  if(Number.isFinite(val)){
-			span.textContent = val.toFixed(2);
-			if(val === rowMax) span.classList.add('best');
-			if(val === rowMin) span.classList.add('worst');
-		  } else {
-			span.textContent = '—';
-		  }
-		  td.appendChild(span);
-		  tr.appendChild(td);
-		});
-
-		tbody.appendChild(tr);
-	  });
-
-	  table.appendChild(tbody);
-	  affinityTableEl.appendChild(table);
-	}
-
-	// Compute pairwise joint affinity among people who have submitted at least once.
-	// joint = (A→B + B→A) / 2, only ranked if both directions exist.
-	function computeJointAffinity(){
-	  const { submitters, rows } = computeAffinity();
-	  // voter -> { submitter: avg } lookup
-	  const look = new Map(rows.map(r => [r.voter, r.values]));
-
-	  const pairs = [];
-	  for(let i=0; i<submitters.length; i++){
-		for(let j=i+1; j<submitters.length; j++){
-		  const A = submitters[i], B = submitters[j];
-		  const aToB = look.get(A)?.[B];
-		  const bToA = look.get(B)?.[A];
-		  const aOK = Number.isFinite(aToB), bOK = Number.isFinite(bToA);
-		  const joint = (aOK && bOK) ? (aToB + bToA)/2 : NaN;
-		  pairs.push({ A, B, aToB, bToA, joint });
-		}
-	  }
-	  return pairs;
-	}
-
-	function renderJointAffinity(){
-	  const pairs = computeJointAffinity()
-		.filter(p => Number.isFinite(p.joint))
-		.sort((a,b) => b.joint - a.joint);
-
-	  jointAffinityTableEl.innerHTML = '';
-	  const table = document.createElement('table');
-
-	  const thead = document.createElement('thead');
-	  thead.innerHTML = `
-		<tr>
-		  <th>Rank</th>
-		  <th>Pair</th>
-		  <th title="Average A gave to B">A→B</th>
-		  <th title="Average B gave to A">B→A</th>
-		  <th title="(A→B + B→A)/2">Joint Avg</th>
-		</tr>`;
-	  table.appendChild(thead);
-
-	  const tbody = document.createElement('tbody');
-	  pairs.forEach((p, idx) => {
-		const tr = document.createElement('tr');
-
-		const rank = document.createElement('td'); rank.innerHTML = `<span class="rank-badge">${idx+1}</span>`;
-
-		// Pair cell centered on the arrow; both sides centered within their halves
-		const pair = document.createElement('td');
-		const wrap = document.createElement('div');
-		wrap.style.display = 'grid';
-		wrap.style.gridTemplateColumns = '1fr auto 1fr';
-		wrap.style.alignItems = 'center';
-		wrap.style.columnGap = '10px';
-
-		// Left (A) — center group
-		const left = document.createElement('div');
-		left.style.display = 'flex';
-		left.style.alignItems = 'center';
-		left.style.justifyContent = 'center';
-		left.style.gap = '6px';
-		const aImg = personAvatarEl(p.A); aImg.style.width='22px'; aImg.style.height='22px';
-		const aName = document.createElement('span'); aName.textContent = p.A;
-		left.appendChild(aImg); left.appendChild(aName);
-
-		// Middle arrow (exact center)
-		const sep = document.createElement('span');
-		sep.textContent = '↔';
-		sep.style.textAlign = 'center';
-
-		// Right (B) — center group; name then avatar (avatar on the right)
-		const right = document.createElement('div');
-		right.style.display = 'flex';
-		right.style.alignItems = 'center';
-		right.style.justifyContent = 'center';
-		right.style.gap = '6px';
-		const bName = document.createElement('span'); bName.textContent = p.B;
-		const bImg = personAvatarEl(p.B); bImg.style.width='22px'; bImg.style.height='22px'; bImg.style.marginLeft = '2px';
-		right.appendChild(bName); right.appendChild(bImg);
-
-		wrap.appendChild(left);
-		wrap.appendChild(sep);
-		wrap.appendChild(right);
-		pair.appendChild(wrap);
-
-		const a2b = document.createElement('td'); a2b.className='pill'; a2b.textContent = Number.isFinite(p.aToB) ? p.aToB.toFixed(2) : '—';
-		const b2a = document.createElement('td'); b2a.className='pill'; b2a.textContent = Number.isFinite(p.bToA) ? p.bToA.toFixed(2) : '—';
-		const joint = document.createElement('td'); joint.className='pill'; joint.textContent = p.joint.toFixed(2);
-
-		tr.append(rank, pair, a2b, b2a, joint);
-		tbody.appendChild(tr);
-	  });
-
-	  table.appendChild(tbody);
-	  jointAffinityTableEl.appendChild(table);
-	}
-
-
-
-
-	// Export chart/panel PNG
-    async function exportElementPNG(el, filename){
-	  if(!el) return;
-	  const canvas = await html2canvas(el, {
-		backgroundColor: null,
-		scale: 2,
-		useCORS: true,
-		allowTaint: true
-	  });
-	  const url = canvas.toDataURL('image/png');
-	  const a = document.createElement('a');
-	  a.href = url;
-	  a.download = filename;
-	  document.body.appendChild(a);  // ensure click works on all browsers
-	  a.click();
-	  a.remove();
-	}
-
-    exportStatsChartBtn.addEventListener('click', ()=> exportElementPNG(statsChartEl, 'people-ranking-chart.png'));
-    exportStatsPanelBtn.addEventListener('click', ()=> exportElementPNG(statsSectionEl, 'people-stats.png'));
-	exportAffinityBtn?.addEventListener('click', ()=> exportElementPNG(affinitySectionEl, 'affinity.png'));
-	
-	if (exportJointAffinityBtn) {
-	  exportJointAffinityBtn.addEventListener('click', () => {
-		const section = document.getElementById('jointAffinitySection'); // fresh lookup
-		exportElementPNG(section, 'joint-affinity.png');
-	  });
-	}
-    // init
+    // ---------- Comments editor ----------
+    function renderCommentsEditor(){
+      ensureCommentKeys();
+      commentsListEl.innerHTML = '';
+      roster.forEach(name=>{
+        const label = document.createElement('div');
+        label.style.display='flex'; label.style.alignItems='center'; label.style.gap='8px';
+        const img = personAvatarEl(name); img.style.width='22px'; img.style.height='22px';
+        const span = document.createElement('span'); span.textContent = name;
+        label.appendChild(img); label.appendChild(span);
+
+        const input = document.createElement('input');
+        input.type = 'number'; input.min = '0'; input.step = '1';
+        input.value = Number.isFinite(commentCounts[name]) ? commentCounts[name] : 0;
+        input.dataset.person = name;
+
+        commentsListEl.appendChild(label);
+        commentsListEl.appendChild(input);
+      });
+    }
+    openCommentsBtn?.addEventListener('click', ()=>{ renderCommentsEditor(); commentsDialog.showModal(); });
+    document.getElementById('cancelComments')?.addEventListener('click', ()=> commentsDialog.close());
+    commentsForm?.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      [...commentsListEl.querySelectorAll('input[type="number"]')].forEach(inp=>{
+        const who = inp.dataset.person;
+        const val = parseInt(inp.value, 10);
+        commentCounts[who] = Number.isFinite(val) && val >= 0 ? val : 0;
+      });
+      commentsDialog.close();
+      renderPeopleStats();
+    });
+
+    // ---------- Init ----------
     renderRosterInputs();
+    updateSourceFieldVisibility();
     rebuildScoreInputs();
     fillDatalist();
     sortByEl.value = 'avg_desc';
 
-    // Keep stats responsive to content changes
     const observer = new MutationObserver(() => { renderPeopleStats(); renderAffinity(); renderJointAffinity(); });
     observer.observe(cardsEl, {childList:true, subtree:true});
 
-    // Initial render
     renderPeopleStats(); renderAffinity(); renderJointAffinity();
   </script>
 </body>
 </html>
+
+     
