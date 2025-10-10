@@ -11,18 +11,14 @@
       --green:#16a34a; --red:#dc2626; --yellow:#facc15;
       --gold:#f5c542; --silver:#c0c0c8; --bronze:#cd7f32;
     }
-
-    
-    /* Lock overall page width to 960px (half of 1920) */
     html, body { height:100%; }
     html { background:var(--bg); }
     body{
-      width:960px; margin:0 auto;        /* centered, fixed layout width */
+      width:960px; margin:0 auto;
       font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
       color:var(--ink); display:flex; flex-direction:column; overflow-x:hidden;
       background:var(--bg);
     }
-
     header{position:sticky; top:0; z-index:10; backdrop-filter:saturate(1.2) blur(6px); background:linear-gradient(180deg, #0b0b0ccc, #0b0b0c80 70%, transparent);}
     .container{max-width:960px; margin:0 auto; padding:20px;}
     h1{font-size:clamp(22px, 2.6vw, 30px); margin:0 0 8px 0}
@@ -68,10 +64,8 @@
       position:relative; background:var(--card); border:1px solid var(--ring); border-radius:18px; padding:16px;
       aspect-ratio:16/9; display:grid; gap:8px;
     }
-    .card.compact{padding:12px; border-radius:14px}
-    .card.borderless{border-color:transparent; background:transparent}
 
-    /* Title/Artist/Source */
+    /* Text blocks */
     .title{font-size:18px; font-weight:800; line-height:1.15; white-space:nowrap; overflow:hidden}
     .artist{font-size:14px; color:var(--muted); margin-top:-2px; padding-bottom:8px; white-space:nowrap; overflow:hidden}
     .source{font-size:13px; color:var(--muted); margin-top:-6px; border-bottom:1px dashed var(--ring); padding-bottom:8px; white-space:nowrap; overflow:hidden}
@@ -101,15 +95,13 @@
     }
     .guess-pill.correct{ box-shadow:0 0 0 2px var(--green) inset; }
     .guess-pill.wrong{   box-shadow:0 0 0 2px var(--red) inset; }
-
     .guess-pic{
-      width:18px; height:18px; border-radius:6px; object-fit:cover;
-      border:2px solid var(--ring); margin-left:6px; background:#0f0f12;
+      width:18px; height:18px; border-radius:6px; object-fit:cover; border:2px solid var(--ring); margin-left:6px; background:#0f0f12;
     }
     .guess-pic.correct{ border-color: var(--green); }
     .guess-pic.wrong{   border-color: var(--red); }
 
-    /* Score-entry favorite toggle */
+    /* Favorite toggle in form */
     .fav-toggle{
       width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center;
       border-radius:8px; border:1px solid var(--ring); background:#0f0f12; margin-right:6px;
@@ -128,22 +120,11 @@
     .span6{grid-column: span 6} .span8{grid-column: span 8} .span12{grid-column: 1 / -1}
     .hints{font-size:12px; color:var(--muted)}
 
-    /* ---------- Poster Layouts ---------- */
+    /* Poster layouts (Sidebar only) */
     .poster-grid{position:relative; width:100%; height:100%; display:grid;}
     .panel{ background:transparent; border:none; border-radius:14px; padding:14px; height:100%; overflow:hidden; }
-    .top-chip{ background:transparent; border:none; border-radius:12px; padding:10px 14px; display:inline-grid; grid-auto-flow:column; gap:14px; }
-    .footer{ background:transparent; border:none; border-radius:14px; padding:12px 16px; min-width:62%; }
-
     .card.poster-sidebar{ padding:16px; background:transparent; border-color:transparent; }
     .card.poster-sidebar .poster-grid{ grid-template-columns: 280px 1fr; grid-template-rows: 1fr; column-gap:16px; height:100%; }
-
-    .card.poster-split{ padding:16px; background:transparent; border-color:transparent; }
-    .card.poster-split .poster-grid{
-      grid-template-columns: 280px 1fr 280px; grid-template-rows: auto 1fr auto;
-      row-gap: 12px; column-gap: 16px; height:100%;
-    }
-    .card.poster-split .footer{ grid-column:2; grid-row:3; justify-self:center; }
-    .card.poster-split .top-chip{ grid-column:2; grid-row:1; justify-self:center; align-self:start; }
 
     /* ===== People Stats ===== */
     .stats-card{ position:relative; background:var(--card); border:1px solid var(--ring); border-radius:18px; padding:16px; }
@@ -172,9 +153,46 @@
     .pill.gold{ color: var(--gold); }
     .stats-table .avatar{ width:22px; height:22px; border-radius:6px; }
 
-    @media (max-width:980px){
-      .stats-wrap{grid-template-columns:1fr}
-    }
+	/* Joint Affinity list layout (tightened + right-aligned A + header) */
+	.pair-row{
+	  display:grid;
+	  /* left, arrow, right, A→B, B→A, joint, bar */
+	  grid-template-columns: 150px 20px 150px 56px 56px 56px 2fr;
+	  align-items:center;
+	  gap:4px;
+	  margin:3px 0;
+	}
+
+	.pair-left, .pair-right{
+	  display:flex; align-items:center; gap:6px;
+	  overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+	  font-size:12px; color:var(--muted);
+	}
+
+	/* Person A pressed toward the arrow (right edge) */
+	.pair-left{ justify-content:flex-end; text-align:right; }
+	.pair-left .avatar, .pair-right .avatar{ width:18px; height:18px; flex:0 0 auto; }
+	.pair-left span, .pair-right span{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
+
+	.pair-arrow{ text-align:center; font-weight:800; }
+
+	.pair-num{
+	  text-align:right;
+	  font-variant-numeric:tabular-nums;
+	  font-weight:800;
+	  padding:0 2px; /* denser number columns */
+	}
+
+	/* Header styling */
+	.pair-header{
+	  font-size:11px; color:var(--muted);
+	  border-bottom:1px dashed var(--ring);
+	  padding-bottom:4px; margin-bottom:6px;
+	}
+	.pair-bar-label{ text-align:right; font-weight:700; }
+
+
+    @media (max-width:980px){ .stats-wrap{grid-template-columns:1fr} }
     @media (max-width:840px){
       .toolbar .block{grid-column: span 6}
       .toolbar .block.wide{grid-column: 1 / -1}
@@ -191,7 +209,7 @@
       <div class="toolbar" role="region" aria-label="Controls">
         <div class="block">
           <label for="peopleCount">Number of people</label>
-          <input id="peopleCount" type="number" min="1" value="5" />
+          <input id="peopleCount" type="number" min="1" value="3" />
         </div>
         <div class="block wide">
           <label>People (names)</label>
@@ -208,14 +226,11 @@
           </div>
         </div>
 
+        <!-- Layout: Sidebar Left only -->
         <div class="block">
           <label for="layoutStyle">Layout</label>
-          <select id="layoutStyle">
-            <option value="standard">Standard</option>
-            <option value="compact">Compact</option>
-            <option value="borderless">Borderless / Transparent</option>
-            <option value="poster-sidebar">Poster: Sidebar Left</option>
-            <option value="poster-split">Poster: Split Sides</option>
+          <select id="layoutStyle" disabled>
+            <option value="poster-sidebar" selected>Poster: Sidebar Left</option>
           </select>
         </div>
 
@@ -226,6 +241,7 @@
             <option value="avg_asc">Average (Low → High)</option>
             <option value="title_asc">Title (A → Z)</option>
             <option value="artist_asc">Artist (A → Z)</option>
+			<option value="submitter_asc">Submitter (A → Z)</option>
           </select>
         </div>
 
@@ -241,10 +257,6 @@
         <div class="block">
           <label>&nbsp;</label>
           <button id="exportAll" title="Export all cards as transparent PNGs">Export All PNGs</button>
-        </div>
-        <div class="block">
-          <label>&nbsp;</label>
-          <button id="downloadPage" title="Save this dashboard as a single HTML file">Download .html</button>
         </div>
 
         <div class="block">
@@ -301,10 +313,10 @@
   </header>
 
   <main class="container" style="padding-top:6px; padding-bottom:40px">
-    <!-- ===== People Stats ===== -->
-    <section id="peopleStats" class="stats-card" aria-live="polite">
+    <!-- ===== People — Chart ===== -->
+    <section id="peopleChart" class="stats-card" aria-live="polite">
       <div class="stats-head">
-        <div class="stats-title">👤 People Stats — Ranking by Avg (received)</div>
+        <div class="stats-title">📈 People — Avg (received) chart</div>
         <div class="export-row">
           <label for="statsColor" class="name" style="align-self:center">Graph color</label>
           <select id="statsColor" style="width:auto">
@@ -316,15 +328,22 @@
             <option value="gold">Gold</option>
             <option value="gray">Gray</option>
           </select>
-          <button id="openComments" data-hide-on-export title="Manually set per-person comment counts">🗣️ Edit comments</button>
           <button id="exportStatsChart" title="Export chart as transparent PNG">Export Chart PNG</button>
-          <button id="exportStatsPanel" title="Export entire stats panel as transparent PNG">Export Panel PNG</button>
         </div>
       </div>
-      <div class="stats-wrap" id="statsWrap">
-        <div class="stats-chart" id="statsChart" aria-label="Ranking chart (higher is better)"></div>
-        <div class="stats-table" id="statsTable" aria-label="Per-person details"></div>
+      <div class="stats-chart" id="statsChart" aria-label="Ranking chart (higher is better)"></div>
+    </section>
+
+    <!-- ===== People — Table ===== -->
+    <section id="peopleStats" class="stats-card" aria-live="polite">
+      <div class="stats-head">
+        <div class="stats-title">👤 People — Stats table</div>
+        <div class="export-row">
+          <button id="openComments" data-hide-on-export title="Manually set per-person comment counts">🗣️ Edit comments</button>
+          <button id="exportStatsPanel" title="Export table as transparent PNG">Export Table PNG</button>
+        </div>
       </div>
+      <div class="stats-table" id="statsTable" aria-label="Per-person details"></div>
     </section>
 
     <!-- ===== Affinity ===== -->
@@ -338,15 +357,25 @@
       <div class="stats-table" id="affinityTable"></div>
     </section>
 
-    <!-- ===== Joint Affinity ===== -->
+    <!-- ===== Joint Affinity (LIST) ===== -->
     <section id="jointAffinitySection" class="stats-card" aria-live="polite">
-      <div class="stats-head">
-        <div class="stats-title">🔗 Joint Affinity — average of A→B and B→A</div>
-        <div class="export-row">
-          <button id="exportJointAffinity" type="button" title="Export as transparent PNG">Export Joint Affinity PNG</button>
-        </div>
-      </div>
-      <div class="stats-table" id="jointAffinityTable"></div>
+		<div class="stats-head">
+		  <div class="stats-title">🔗 Joint Affinity — top pairs (A↔B)</div>
+		  <div class="export-row">
+			<label for="jointColor" class="name" style="align-self:center">Graph color</label>
+			<select id="jointColor" style="width:auto">
+			  <option value="blue" selected>Blue</option>
+			  <option value="green">Green</option>
+			  <option value="red">Red</option>
+			  <option value="purple">Purple</option>
+			  <option value="pink">Pink</option>
+			  <option value="gold">Gold</option>
+			  <option value="gray">Gray</option>
+			</select>
+			<button id="exportJointAffinity" type="button" title="Export as transparent PNG">Export Joint Affinity PNG</button>
+		  </div>
+		</div>
+      <div class="stats-chart" id="jointAffinityList"></div>
     </section>
 
     <section id="cards" class="cards" aria-live="polite" style="margin-top:18px">
@@ -451,24 +480,21 @@
   <!-- html2canvas for export -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
+    /* ========== Element refs ========== */
     const peopleCountEl = document.getElementById('peopleCount');
     const rosterEl = document.getElementById('roster');
     const datalistEl = document.getElementById('rosterList');
     const scoreInputsEl = document.getElementById('scoreInputs');
     const songForm = document.getElementById('songForm');
     const cardsEl = document.getElementById('cards');
-    const layoutStyleEl = document.getElementById('layoutStyle');
     const sortByEl = document.getElementById('sortBy');
     const exportAllBtn = document.getElementById('exportAll');
-    const downloadPageBtn = document.getElementById('downloadPage');
     const submitterEl = document.getElementById('submitter');
     const titleEl = document.getElementById('title');
     const artistEl = document.getElementById('artist');
 
-    // Mode toggles
+    // Modes / source / labels
     const modeMenuEl = document.getElementById('modeMenu');
-
-    // Source controls
     const sourceFieldWrap = document.getElementById('sourceFieldWrap');
     const sourceLabelEl = document.getElementById('sourceLabel');
     const sourceInputEl = document.getElementById('sourceInput');
@@ -479,16 +505,18 @@
     let guessDisplayMode = guessDisplayEl?.value || 'names';
     guessDisplayEl?.addEventListener('change', () => { guessDisplayMode = guessDisplayEl.value; refreshAllCards(); });
 
-    // Stats panel elements
+    // Stats panels
     const statsChartEl = document.getElementById('statsChart');
     const statsTableEl = document.getElementById('statsTable');
     const exportStatsChartBtn = document.getElementById('exportStatsChart');
     const exportStatsPanelBtn = document.getElementById('exportStatsPanel');
-    const statsSectionEl = document.getElementById('peopleStats');
-
     const statsColorEl = document.getElementById('statsColor');
     let statsColor = statsColorEl?.value || 'blue';
-    statsColorEl?.addEventListener('change', () => { statsColor = statsColorEl.value; renderPeopleStats(); });
+// Re-enable live color changes for the Avg (received) chart
+statsColorEl?.addEventListener('change', () => {
+  statsColor = statsColorEl.value;
+  renderPeopleChart();
+});
 
     // Affinity
     const affinitySectionEl = document.getElementById('affinitySection');
@@ -497,8 +525,14 @@
 
     // Joint Affinity
     const jointAffinitySectionEl = document.getElementById('jointAffinitySection');
-    const jointAffinityTableEl = document.getElementById('jointAffinityTable');
+    const jointAffinityListEl = document.getElementById('jointAffinityList');
     const exportJointAffinityBtn = document.getElementById('exportJointAffinity');
+	const jointColorEl = document.getElementById('jointColor');
+	let jointColor = jointColorEl?.value || 'blue';
+	jointColorEl?.addEventListener('change', () => {
+	  jointColor = jointColorEl.value;
+	  renderJointAffinity();
+	});
 
     // Comments editor
     const openCommentsBtn = document.getElementById('openComments');
@@ -523,16 +557,16 @@
     const guessDelimiterEl = document.getElementById('guessDelimiter');
     const cancelBulkGuessBtn = document.getElementById('cancelBulkGuess');
 
-    // State
-    let roster = ['Person 1','Person 2','Person 3','Person 4','Person 5'];
-    let photos = {}; // { [name:string]: dataUrl }
-    // song: {id,title,artist,submitter,avg,scores:{},favorites:{},flags:{anime,game,anonymous},sourceText?:string,guesses?:{[name]:string}}
+    /* ========== State ========== */
+    let roster = ['Person 1','Person 2','Person 3'];
+    let photos = {}; // { [name]: dataUrl }
+    // song: {id,title,artist,submitter,avg,scores:{},favorites:{},flags:{anime,game,anonymous},sourceText?:string,guesses?:{[voter]:string}}
     let songs = [];
-    let commentCounts = {}; // { [name:string]: number }
+    let commentCounts = {}; // { [name]: number }
     let ranksMap = new Map();
     let tieBreakers = new Map();
 
-    // ---- Utils
+    /* ========== Utils ========== */
     const EPS = 1e-6;
     const uid = () => Math.random().toString(36).slice(2,9);
     const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
@@ -544,7 +578,30 @@
     function isBlankScore(v){ const t = lc(v); return t===''||t==='/'||t==='na'||t==='n/a'||t==='–'||t==='—'||t==='nil'; }
     function parseScoreCell(raw){ const txt=(raw||'').toString().trim(); const favorite=/[*★]/.test(txt); const num=parseFloat(txt.replace(/[^\d.]+/g,'')); return { num: Number.isFinite(num)? num : NaN, favorite }; }
 
-    // Mode flags (global UI)
+    /* Resize helpers (single definition) */
+    function shrinkToFit(el, minPx=10){
+      const style = getComputedStyle(el);
+      const base = parseFloat(style.fontSize) || 18;
+      el.style.fontSize = base + 'px';
+      let guard = 0;
+      while (el.scrollWidth > el.clientWidth && guard < 60) {
+        const cur = parseFloat(getComputedStyle(el).fontSize);
+        if (cur <= minPx) break;
+        el.style.fontSize = (cur - 0.5) + 'px';
+        guard++;
+      }
+    }
+    const resizeObserver = new ResizeObserver(() => {
+      document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(shrinkToFit);
+    });
+    window.addEventListener('resize', () => {
+      document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(shrinkToFit);
+      renderPeopleChart(); renderPeopleStatsTable(); renderAffinity(); renderJointAffinity();
+    });
+
+    function ensureCommentKeys(){ roster.forEach(name=>{ if(!commentCounts.hasOwnProperty(name)) commentCounts[name] = 0; }); }
+
+    /* ========== Modes ========== */
     const activeFlags = ()=> {
       const flags = {anime:false, game:false, anonymous:false};
       modeMenuEl.querySelectorAll('.mode-btn').forEach(btn=>{
@@ -557,7 +614,6 @@
       return !!activeFlags()[flag];
     }
 
-    // Mode toggle handlers
     modeMenuEl.addEventListener('click', (e)=>{
       const btn = e.target.closest('.mode-btn'); if(!btn) return;
       btn.classList.toggle('active');
@@ -585,6 +641,7 @@
       scoresLabelEl.textContent = flags.anonymous ? 'Scores (per person) • plus each person\'s guess' : 'Scores (per person)';
     }
 
+    /* ========== Roster UI ========== */
     function personAvatarEl(name, size='sm'){
       const img = document.createElement('img');
       img.className = size==='lg' ? 'avatar lg' : 'avatar';
@@ -594,31 +651,6 @@
       return img;
     }
 
-    function shrinkToFit(el, minPx=10){
-      const style = getComputedStyle(el);
-      const base = parseFloat(style.fontSize) || 18;
-      el.style.fontSize = base + 'px';
-      let guard = 0;
-      while (el.scrollWidth > el.clientWidth && guard < 60) {
-        const cur = parseFloat(getComputedStyle(el).fontSize);
-        if (cur <= minPx) break;
-        el.style.fontSize = (cur - 0.5) + 'px';
-        guard++;
-      }
-    }
-    const resizeObserver = new ResizeObserver(() => {
-      document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(shrinkToFit);
-    });
-    window.addEventListener('resize', () => {
-      document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(shrinkToFit);
-      renderPeopleStats(); renderAffinity();
-    });
-
-    function ensureCommentKeys(){
-      roster.forEach(name=>{ if(!commentCounts.hasOwnProperty(name)) commentCounts[name] = 0; });
-    }
-
-    // ---------- Roster UI ----------
     function renderRosterInputs(){
       rosterEl.innerHTML = '';
       datalistEl.innerHTML = '';
@@ -633,7 +665,7 @@
           if(commentCounts.hasOwnProperty(oldName) && !commentCounts.hasOwnProperty(newName)) commentCounts[newName] = commentCounts[oldName];
           if(oldName !== newName){ delete photos[oldName]; delete commentCounts[oldName]; }
           roster[i] = newName;
-          rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderRosterInputs(); renderPeopleStats(); renderAffinity();
+          rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderRosterInputs(); renderPeopleChart(); renderPeopleStatsTable(); renderAffinity(); renderJointAffinity();
         });
 
         const uploadBtn = document.createElement('input');
@@ -641,11 +673,11 @@
         uploadBtn.addEventListener('change', async ()=>{
           const file = uploadBtn.files?.[0]; if(!file) return;
           const dataUrl = await readImageAsDataURL(file);
-          photos[roster[i]] = dataUrl; refreshAllCards(); renderRosterInputs(); rebuildScoreInputs(); renderPeopleStats(); renderAffinity();
+          photos[roster[i]] = dataUrl; refreshAllCards(); renderRosterInputs(); rebuildScoreInputs(); renderPeopleChart(); renderPeopleStatsTable(); renderAffinity(); renderJointAffinity();
         });
 
         const clearBtn = document.createElement('button'); clearBtn.textContent='🗑'; clearBtn.type='button'; clearBtn.title='Remove avatar'; clearBtn.style.width='42px';
-        clearBtn.addEventListener('click', ()=>{ delete photos[roster[i]]; refreshAllCards(); renderRosterInputs(); rebuildScoreInputs(); renderPeopleStats(); renderAffinity(); });
+        clearBtn.addEventListener('click', ()=>{ delete photos[roster[i]]; refreshAllCards(); renderRosterInputs(); rebuildScoreInputs(); renderPeopleChart(); renderPeopleStatsTable(); renderAffinity(); renderJointAffinity(); });
 
         const removeBtn = document.createElement('button'); removeBtn.textContent='✕'; removeBtn.type='button'; removeBtn.title='Remove person'; removeBtn.style.width='42px';
         removeBtn.addEventListener('click', ()=>{
@@ -653,7 +685,7 @@
           roster.splice(i,1);
           peopleCountEl.value = roster.length;
           Object.keys(commentCounts).forEach(k=>{ if(!roster.includes(k)) delete commentCounts[k]; });
-          renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderPeopleStats(); renderAffinity();
+          renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderPeopleChart(); renderPeopleStatsTable(); renderAffinity(); renderJointAffinity();
         });
 
         const preview = personAvatarEl(name, 'lg');
@@ -681,10 +713,10 @@
         removed.forEach(name => { delete photos[name]; delete commentCounts[name]; });
         roster.splice(n);
       }
-      renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderPeopleStats(); renderAffinity();
+      renderRosterInputs(); rebuildScoreInputs(); fillDatalist(); refreshAllCards(); renderPeopleChart(); renderPeopleStatsTable(); renderAffinity(); renderJointAffinity();
     });
 
-    // ---------- Inputs (scores + guesses + manual favorites) ----------
+    /* ========== Inputs (scores + guesses + manual favorites) ========== */
     submitterEl.addEventListener('input', rebuildScoreInputs);
     function rebuildScoreInputs(){
       scoreInputsEl.innerHTML = '';
@@ -755,7 +787,7 @@
       });
     }
 
-    // ---------- Averages / sorting ----------
+    /* ========== Averages / sorting ========== */
     function computeAverage(scores){
       const vals = Object.values(scores).map(v=> typeof v==="number"? v : parseFloat(v)).filter(v=>!Number.isNaN(v));
       if(!vals.length) return 0;
@@ -779,7 +811,53 @@
       const ordered = []; for (const g of groups){ shuffle(g); ordered.push(...g); }
       ranksMap = new Map(); ordered.forEach((s, idx)=>{ ranksMap.set(s.id, idx + 1); }); songs = ordered;
     }
+	// Compute rank numbers by average ONLY (does NOT reorder `songs`)
+	function computeRanksOnly(){
+	  const eps = 1e-6;
+	  const sorted = [...songs].sort((a,b)=> (b.avg) - (a.avg));
+	  const groups = [];
+	  let cur = [];
+	  for (const s of sorted){
+		if (!cur.length || Math.abs(s.avg - cur[0].avg) <= eps) cur.push(s);
+		else { groups.push(cur); cur = [s]; }
+	  }
+	  if (cur.length) groups.push(cur);
+	  const ordered = [];
+	  for (const g of groups){ shuffle(g); ordered.push(...g); } // tie shuffle like before
+	  ranksMap = new Map();
+	  ordered.forEach((s, idx)=>{ ranksMap.set(s.id, idx + 1); });
+	}
 
+	// Apply the currently selected sort from the dropdown (preserves selection)
+	function applyCurrentSort(){
+	  const val = sortByEl?.value || 'avg_desc';
+	  refreshTieBreakers();
+
+	  const byTitle   = (a,b)=> (a.title||'').localeCompare(b.title||'',   undefined, {sensitivity:'base'});
+	  const byArtist  = (a,b)=> (a.artist||'').localeCompare(b.artist||'', undefined, {sensitivity:'base'});
+	  const bySubmit  = (a,b)=> (a.submitter||'').localeCompare(b.submitter||'', undefined, {sensitivity:'base'});
+	  const byAvgAsc  = (a,b)=> (a.avg) - (b.avg);
+
+	  if (val === 'avg_desc') {
+		songs.sort(sortByRanking);
+	  } else {
+		const cmp =
+		  val === 'avg_asc'       ? byAvgAsc :
+		  val === 'title_asc'     ? byTitle  :
+		  val === 'artist_asc'    ? byArtist :
+		  val === 'submitter_asc' ? bySubmit :
+		  sortByRanking; // fallback
+
+		songs.sort((a,b)=>{
+		  const diff = cmp(a,b);
+		  if (diff !== 0 && !Number.isNaN(diff)) return diff;
+		  return (tieBreakers.get(a.id) ?? 0) - (tieBreakers.get(b.id) ?? 0);
+		});
+	  }
+
+	  // Always recompute ranks by avg, but do NOT reorder the songs here
+	  computeRanksOnly();
+	}
     function placeText(n){
       const s = String(n);
       if(s.endsWith('11') || s.endsWith('12') || s.endsWith('13')) return `${n}th`;
@@ -806,7 +884,7 @@
       }
     }
 
-    // ---------- Card builders ----------
+    /* ========== Cards ========== */
     function getExtrema(scores){
       const entries = Object.entries(scores).filter(([,v])=>v!=='' && v!=null && !Number.isNaN(parseFloat(v)));
       if(entries.length===0) return {maxNames:new Set(), minNames:new Set()};
@@ -830,7 +908,7 @@
         const nameSpan = document.createElement('span'); nameSpan.className='name'; nameSpan.textContent = person;
         badge.appendChild(img); badge.appendChild(nameSpan);
 
-        // Anonymous: show guess representation; correctness border on GUESSED identity only
+        // Anonymous: show guessed identity with correctness border
         if(songHasFlag(song,'anonymous')){
           const g = (song.guesses||{})[person];
           if(g){
@@ -851,7 +929,7 @@
 
         const rowR = document.createElement('div'); rowR.className='score-cell';
 
-        // Favorite star (works in anonymous too)
+        // Favorite star
         const isFav = !!(song.favorites && song.favorites[person]);
         if(isFav){ const star=document.createElement('span'); star.className='favStar'; star.textContent='★'; rowR.appendChild(star); }
 
@@ -895,7 +973,7 @@
       const a = document.createElement('div'); a.className='artist'; a.textContent = song.artist; a.style.color = color;
       panel.appendChild(t); panel.appendChild(a);
       if((songHasFlag(song,'anime') || songHasFlag(song,'game')) && song.sourceText){
-        const s = document.createElement('div'); s.className='source'; s.textContent = song.sourceText; panel.appendChild(s);
+        const s = document.createElement('div'); s.className='source'; s.textContent = song.sourceText; s.style.color = color; panel.appendChild(s);
       }
 
       const chip = document.createElement('div'); chip.className='hero chips';
@@ -921,106 +999,15 @@
       return card;
     }
 
-    function renderPosterSplit(song, color, rank){
-      const card = document.createElement('article');
-      card.className = 'card poster-split';
-      card.dataset.id = song.id;
-      card.dataset.rank = String(rank);
-
-      const grid = document.createElement('div'); grid.className = 'poster-grid'; card.appendChild(grid);
-
-      const half = Math.ceil(roster.length / 2);
-      const leftNames = roster.slice(0, half);
-      const rightNames = roster.slice(half);
-
-      const leftRail = document.createElement('div');
-      leftRail.className='panel'; leftRail.style.gridColumn = '1'; leftRail.style.gridRow = '1 / -1';
-      leftRail.appendChild((()=>{ const lbl=document.createElement('div'); lbl.textContent='Scores'; return lbl;})());
-      leftRail.appendChild(buildScoresList(leftNames, song, 'rail-scores'));
-      grid.appendChild(leftRail);
-
-      const top = document.createElement('div'); top.className='top-chip';
-      const r = document.createElement('div'); r.className='rank'; r.textContent = 'Ranking'; r.style.color = color;
-      const rnum = document.createElement('div'); rnum.className='rank'; rnum.textContent = placeText(rank); rnum.style.color = color; rnum.style.fontWeight='800';
-      const a = document.createElement('div'); a.className='avgnum'; a.textContent = 'Average'; a.style.color = color;
-      const anum = document.createElement('div'); anum.className='avgnum'; anum.textContent = Number.isFinite(song.avg)? song.avg.toFixed(2) : '-'; anum.style.color = color; anum.style.fontWeight='800';
-      top.appendChild(r); top.appendChild(rnum); top.appendChild(a); top.appendChild(anum);
-      top.style.gridColumn = '2'; top.style.gridRow = '1'; top.style.justifySelf='center'; top.style.alignSelf='start';
-      grid.appendChild(top);
-
-      const rightRail = document.createElement('div');
-      rightRail.className='panel'; rightRail.style.gridColumn = '3'; rightRail.style.gridRow = '1 / -1';
-      rightRail.appendChild((()=>{ const lbl=document.createElement('div'); lbl.textContent='Scores'; return lbl;})());
-      rightRail.appendChild(buildScoresList(rightNames, song, 'rail-scores'));
-      grid.appendChild(rightRail);
-
-      const footer = document.createElement('div'); footer.className='footer';
-      const ft = document.createElement('div'); ft.className='title'; ft.textContent = song.title; ft.style.color = color;
-      const fa = document.createElement('div'); fa.className='artist'; fa.textContent = song.artist; fa.style.color = color;
-      footer.appendChild(ft); footer.appendChild(fa);
-      if((songHasFlag(song,'anime') || songHasFlag(song,'game')) && song.sourceText){
-        const fs = document.createElement('div'); fs.className='source'; fs.textContent = song.sourceText; footer.appendChild(fs);
-      }
-      footer.style.gridColumn = '2'; footer.style.gridRow = '3'; footer.style.justifySelf='center';
-      grid.appendChild(footer);
-
-      const actions = document.createElement('div'); actions.className='card-actions';
-      const dl = document.createElement('button'); dl.textContent = 'Export PNG'; dl.type='button';
-      dl.addEventListener('click', ()=> downloadCardPNG(card, `${rank} (${sanitizeFilename(song.title)}).png`) );
-      const del = document.createElement('button'); del.textContent = 'Delete'; del.type='button';
-      del.addEventListener('click', ()=>{ songs = songs.filter(s=>s.id!==song.id); rerenderCards(); if(!songs.length){ showEmpty(); } });
-      actions.appendChild(dl); actions.appendChild(del);
-      card.appendChild(actions);
-
-      return card;
-    }
-
     function renderCard(song){
       const rank = ranksMap.get(song.id) ?? 0;
       const color = placementColor(rank);
-      const style = layoutStyleEl.value;
-
-      if(style === 'poster-sidebar') return renderPosterSidebar(song, color, rank);
-      if(style === 'poster-split')   return renderPosterSplit(song, color, rank);
-
-      const card = document.createElement('article');
-      card.className = 'card';
-      card.dataset.id = song.id;
-      card.dataset.rank = String(rank);
-
-      card.classList.toggle('compact', style==='compact');
-      card.classList.toggle('borderless', style==='borderless');
-
-      const title = document.createElement('div'); title.className='title'; title.textContent = song.title; title.style.color = color;
-      const artist = document.createElement('div'); artist.className='artist'; artist.textContent = song.artist; artist.style.color = color;
-      card.appendChild(title); card.appendChild(artist);
-
-      if((songHasFlag(song,'anime') || songHasFlag(song,'game')) && song.sourceText){
-        const src = document.createElement('div'); src.className='source'; src.textContent = song.sourceText; card.appendChild(src);
-      }
-
-      const hero = document.createElement('div'); hero.className='hero';
-      const rankEl = document.createElement('div'); rankEl.className='rank'; rankEl.textContent = placeText(rank); rankEl.style.color = color;
-      const avgEl = document.createElement('div'); avgEl.className='avgnum'; avgEl.textContent = Number.isFinite(song.avg)? song.avg.toFixed(2) : '-'; avgEl.style.color = color;
-      hero.appendChild(rankEl); hero.appendChild(avgEl);
-      card.appendChild(hero);
-
-      card.appendChild(buildScoresList(roster, song));
-
-      const actions = document.createElement('div'); actions.className='card-actions';
-      const dl = document.createElement('button'); dl.textContent = 'Export PNG'; dl.type='button';
-      dl.addEventListener('click', ()=> downloadCardPNG(card, `${rank} (${sanitizeFilename(song.title)}).png`) );
-      const del = document.createElement('button'); del.textContent = 'Delete'; del.type='button';
-      del.addEventListener('click', ()=>{ songs = songs.filter(s=>s.id!==song.id); rerenderCards(); if(!songs.length){ showEmpty(); } });
-      actions.appendChild(dl); actions.appendChild(del);
-      card.appendChild(actions);
-
-      return card;
+      return renderPosterSidebar(song, color, rank); // Sidebar-only
     }
 
     function showEmpty(){ const div = document.createElement('div'); div.className='empty'; div.id='emptyState'; div.textContent='No songs yet — add one above ✨'; cardsEl.appendChild(div); }
 
-    // ---------- Export helpers ----------
+    /* ========== Export helpers ========== */
     async function downloadCardPNG(cardEl, filename){
       const actions = cardEl.querySelector('.card-actions');
       const prevDisplay = actions ? actions.style.display : '';
@@ -1059,37 +1046,23 @@
         await downloadCardPNG(c, fname);
       }
     });
-    exportStatsChartBtn.addEventListener('click', ()=> exportElementPNG(statsChartEl, 'people-ranking-chart.png'));
-    exportStatsPanelBtn.addEventListener('click', ()=> exportElementPNG(statsSectionEl, 'people-stats.png'));
+    exportStatsChartBtn.addEventListener('click', ()=> exportElementPNG(document.getElementById('peopleChart'), 'people-ranking-chart.png'));
+    exportStatsPanelBtn.addEventListener('click', ()=> exportElementPNG(document.getElementById('peopleStats'), 'people-stats-table.png'));
     exportAffinityBtn?.addEventListener('click', ()=> exportElementPNG(affinitySectionEl, 'affinity.png'));
     exportJointAffinityBtn?.addEventListener('click', ()=> exportElementPNG(jointAffinitySectionEl, 'joint-affinity.png'));
 
-    layoutStyleEl.addEventListener('change', ()=>{ rerenderCards(); renderPeopleStats(); renderAffinity(); });
-
     sortByEl.addEventListener('change', ()=>{
-      if(sortByEl.value === 'avg_desc'){ rerenderCards(); }
-      else{
-        const val = sortByEl.value;
-        refreshTieBreakers();
-        const fn = (a,b)=>{
-          let diff;
-          if(val==='avg_asc') diff = (a.avg) - (b.avg);
-          else if(val==='title_asc') diff = a.title.localeCompare(b.title, undefined, {sensitivity:'base'});
-          else if(val==='artist_asc') diff = a.artist.localeCompare(b.artist, undefined, {sensitivity:'base'});
-          else diff = (b.avg) - (a.avg);
-          if (diff !== 0 && !Number.isNaN(diff)) return diff;
-          return (tieBreakers.get(a.id) ?? 0) - (tieBreakers.get(b.id) ?? 0);
-        };
-        songs.sort(fn);
-        assignRanks();
-        cardsEl.innerHTML=''; document.getElementById('emptyState')?.remove();
-        songs.forEach(s=> cardsEl.appendChild(renderCard(s)));
-        document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
-      }
-      renderPeopleStats(); renderAffinity();
-    });
+	  applyCurrentSort();
+	  cardsEl.innerHTML=''; document.getElementById('emptyState')?.remove();
+	  songs.forEach(s=> cardsEl.appendChild(renderCard(s)));
+	  document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum')
+		.forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
 
-    // ---------- Add / Clear ----------
+	  renderPeopleChart(); renderPeopleStatsTable(); renderAffinity(); renderJointAffinity();
+	});
+
+
+    /* ========== Add / Clear ========== */
     songForm.addEventListener('submit', (e)=>{
       e.preventDefault();
       const title = norm(titleEl.value);
@@ -1109,7 +1082,7 @@
           else if(!Number.isNaN(parseFloat(val))) scores[who] = parseFloat(val);
         }
       });
-      // collect favorites from toggles
+      // favorites from toggles
       scoreInputsEl.querySelectorAll('.fav-toggle[aria-pressed="true"]').forEach(btn=>{
         favorites[btn.dataset.person] = true;
       });
@@ -1138,26 +1111,27 @@
     });
 
     function addSong(data){
-      songs.push(data); rerenderCards(); renderPeopleStats(); renderAffinity(); renderJointAffinity();
+      songs.push(data); rerenderCards(); renderPeopleChart(); renderPeopleStatsTable(); renderAffinity(); renderJointAffinity();
     }
 
-    function rerenderCards(){
-      cardsEl.innerHTML = ''; document.getElementById('emptyState')?.remove();
-      sortByEl.value = 'avg_desc';
-      refreshTieBreakers(); songs.sort(sortByRanking); assignRanks();
-      songs.forEach(song=> cardsEl.appendChild(renderCard(song)));
-      document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
-    }
+	function rerenderCards(){
+	  applyCurrentSort();
+	  cardsEl.innerHTML = ''; document.getElementById('emptyState')?.remove();
+	  songs.forEach(song=> cardsEl.appendChild(renderCard(song)));
+	  document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum')
+		.forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
+	}
+
     function refreshAllCards(){
-      refreshTieBreakers(); songs.sort(sortByRanking); assignRanks();
-      document.querySelectorAll('.card').forEach(card=>{
-        const id = card.dataset.id; const song = songs.find(s=>s.id===id);
-        if(song){ card.replaceWith(renderCard(song)); }
-      });
-      document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
-    }
+	  applyCurrentSort();
+	  cardsEl.innerHTML = ''; document.getElementById('emptyState')?.remove();
+	  songs.forEach(song=> cardsEl.appendChild(renderCard(song)));
+	  document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum')
+		.forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
+	}
 
-    // ---------- People Stats / Affinity ----------
+
+    /* ========== People Stats / Affinity ========== */
     function computePeopleStats(){
       const base = {};
       roster.forEach(name=>{
@@ -1208,7 +1182,6 @@
       });
 
       const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : NaN;
-
       ensureCommentKeys();
 
       return Object.values(base).map(p=>({
@@ -1223,33 +1196,13 @@
       }));
     }
 
-    function renderPeopleStats(){
+    function renderPeopleChart(){
       const stats = computePeopleStats();
       const ranked = [...stats].sort((a,b)=>{
         const A = Number.isFinite(a.avgReceived) ? a.avgReceived : -Infinity;
         const B = Number.isFinite(b.avgReceived) ? b.avgReceived : -Infinity;
         return B - A;
       });
-
-      // Max/min for highlighting
-      const recvVals = ranked.map(r => Number.isFinite(r.avgReceived) ? r.avgReceived : null).filter(v=>v!=null);
-      const globalMaxRecv = recvVals.length ? Math.max(...recvVals) : NaN;
-      const globalMinRecv = recvVals.length ? Math.min(...recvVals) : NaN;
-
-      const givenVals = ranked.map(r => Number.isFinite(r.avgGiven) ? r.avgGiven : null).filter(v=>v!=null);
-      const globalMaxGiven = givenVals.length ? Math.max(...givenVals) : NaN;
-      const globalMinGiven = givenVals.length ? Math.min(...givenVals) : NaN;
-
-      const favVals = ranked.map(r => r.favorited || 0);
-      const globalMaxFav = favVals.length ? Math.max(...favVals) : 0;
-
-      const commentsVals = ranked.map(r => Number.isFinite(r.comments) ? r.comments : 0);
-      const globalMaxComments = commentsVals.length ? Math.max(...commentsVals) : 0;
-
-      const guessedVals = ranked.map(r => r.correctGuesses || 0);
-      const maxGuessed = guessedVals.length ? Math.max(...guessedVals) : 0;
-      const minGuessed = guessedVals.length ? Math.min(...guessedVals) : 0;
-      const anyGuesses = guessedVals.some(v=>v>0);
 
       // Chart (Avg received)
       statsChartEl.innerHTML = '';
@@ -1274,8 +1227,44 @@
         rowEl.appendChild(wrap);
         statsChartEl.appendChild(rowEl);
       });
+    }
 
-      // Table
+    function renderPeopleStatsTable(){
+      const stats = computePeopleStats();
+      const ranked = [...stats].sort((a,b)=>{
+        const A = Number.isFinite(a.avgReceived) ? a.avgReceived : -Infinity;
+        const B = Number.isFinite(b.avgReceived) ? b.avgReceived : -Infinity;
+        return B - A;
+      });
+
+      // Max/min for highlighting
+      const recvVals = ranked.map(r => Number.isFinite(r.avgReceived) ? r.avgReceived : null).filter(v=>v!=null);
+      const globalMaxRecv = recvVals.length ? Math.max(...recvVals) : NaN;
+      const globalMinRecv = recvVals.length ? Math.min(...recvVals) : NaN;
+
+      const givenVals = ranked.map(r => Number.isFinite(r.avgGiven) ? r.avgGiven : null).filter(v=>v!=null);
+      const globalMaxGiven = givenVals.length ? Math.max(...givenVals) : NaN;
+      const globalMinGiven = givenVals.length ? Math.min(...givenVals) : NaN;
+
+      const favVals = ranked.map(r => r.favorited || 0);
+      const globalMaxFav = favVals.length ? Math.max(...favVals) : 0;
+
+      const commentsVals = ranked.map(r => Number.isFinite(r.comments) ? r.comments : 0);
+      const globalMaxComments = commentsVals.length ? Math.max(...commentsVals) : 0;
+
+      const greensVals = ranked.map(r => r.greensGiven || 0);
+      const greensMax = greensVals.length ? Math.max(...greensVals) : 0;
+      const greensMin = greensVals.length ? Math.min(...greensVals) : 0;
+
+      const redsVals = ranked.map(r => r.redsGiven || 0);
+      const redsMax = redsVals.length ? Math.max(...redsVals) : 0;
+      const redsMin = redsVals.length ? Math.min(...redsVals) : 0;
+
+      const guessedVals = ranked.map(r => r.correctGuesses || 0);
+      const maxGuessed = guessedVals.length ? Math.max(...guessedVals) : 0;
+      const minGuessed = guessedVals.length ? Math.min(...guessedVals) : 0;
+      const anyGuesses = guessedVals.some(v=>v>0);
+
       statsTableEl.innerHTML = '';
       const table = document.createElement('table');
       const thead = document.createElement('thead');
@@ -1292,495 +1281,436 @@
           <th>Reds</th>
         </tr>`;
       table.appendChild(thead);
+
       const tbody = document.createElement('tbody');
-      ranked.forEach((r, i)=>{
+      ranked.forEach((p, i)=>{
         const tr = document.createElement('tr');
 
-        const rankCell = document.createElement('td'); rankCell.innerHTML = `<span class="rank-badge">${i+1}</span>`;
+        const tdRank = document.createElement('td'); tdRank.textContent = String(i+1); tr.appendChild(tdRank);
 
-        const nm = document.createElement('td');
-        nm.style.display = 'flex'; nm.style.alignItems = 'center'; nm.style.gap = '8px';
-        const nmImg = personAvatarEl(r.name); nmImg.style.width='22px'; nmImg.style.height='22px';
-        const nmTxt = document.createElement('span'); nmTxt.textContent = r.name;
-        nm.appendChild(nmImg); nm.appendChild(nmTxt);
+        const tdName = document.createElement('td');
+        tdName.style.display = 'flex'; tdName.style.alignItems='center'; tdName.style.gap='8px';
+        tdName.appendChild(personAvatarEl(p.name));
+        const nm = document.createElement('span'); nm.textContent = p.name; tdName.appendChild(nm);
+        tr.appendChild(tdName);
 
-        const recv = document.createElement('td'); recv.className='pill';
-        if(Number.isFinite(r.avgReceived)){
-          recv.textContent = r.avgReceived.toFixed(2);
-          if(r.avgReceived === globalMaxRecv) recv.classList.add('green');
-          if(r.avgReceived === globalMinRecv) recv.classList.add('red');
-        } else { recv.textContent = '-'; }
+        const tdRecv = document.createElement('td');
+        const recv = Number.isFinite(p.avgReceived) ? p.avgReceived.toFixed(2) : '-';
+        tdRecv.innerHTML = `<span class="pill ${p.avgReceived===globalMaxRecv?'green':(p.avgReceived===globalMinRecv?'red':'')}">${recv}</span>`;
+        tr.appendChild(tdRecv);
 
-        const given = document.createElement('td'); given.className='pill';
-        if (Number.isFinite(r.avgGiven)) {
-          given.textContent = r.avgGiven.toFixed(2);
-          if (r.avgGiven === globalMaxGiven) given.classList.add('green');
-          if (r.avgGiven === globalMinGiven) given.classList.add('red');
-        } else { given.textContent = '-'; }
+        const tdGiven = document.createElement('td');
+        const given = Number.isFinite(p.avgGiven) ? p.avgGiven.toFixed(2) : '-';
+        tdGiven.innerHTML = `<span class="pill ${p.avgGiven===globalMaxGiven?'green':(p.avgGiven===globalMinGiven?'red':'')}">${given}</span>`;
+        tr.appendChild(tdGiven);
 
-        const fav = document.createElement('td'); fav.className='pill'; fav.textContent = r.favorited || 0;
-        if((r.favorited||0) === globalMaxFav && globalMaxFav > 0) fav.classList.add('gold');
+        const tdFav = document.createElement('td');
+        tdFav.innerHTML = `<span class="pill ${p.favorited===globalMaxFav && globalMaxFav>0 ? 'gold' : ''}">${p.favorited||0}</span>`;
+        tr.appendChild(tdFav);
 
-        const commentsCell = document.createElement('td'); commentsCell.className='pill';
-        const commentsVal = Number.isFinite(r.comments) ? r.comments : 0;
-        commentsCell.textContent = commentsVal;
-        if (commentsVal === globalMaxComments && globalMaxComments > 0) commentsCell.classList.add('green');
-
-        tr.append(rankCell, nm, recv, given, fav, commentsCell);
+        const tdComments = document.createElement('td');
+        const commentsHighlight = (globalMaxComments > 0) && (p.comments === globalMaxComments);
+        tdComments.innerHTML = `<span class="pill ${commentsHighlight ? 'green' : ''}">${p.comments||0}</span>`;
+        tr.appendChild(tdComments);
 
         if(anyGuesses){
-          const guessed = document.createElement('td'); guessed.className='pill';
-          const gval = r.correctGuesses || 0;
-          guessed.textContent = gval;
-          if (maxGuessed !== minGuessed) {
-            if (gval === maxGuessed) guessed.classList.add('green');
-            if (gval === minGuessed) guessed.classList.add('red');
-          }
-          tr.appendChild(guessed);
+          const tdGuess = document.createElement('td');
+          const cls = (p.correctGuesses===maxGuessed && maxGuessed>0 ? 'green' : (p.correctGuesses===minGuessed && maxGuessed>0 ? 'red' : ''));
+          tdGuess.innerHTML = `<span class="pill ${cls}">${p.correctGuesses||0}</span>`;
+          tr.appendChild(tdGuess);
         }
 
-        const greens = document.createElement('td'); greens.className='pill'; greens.textContent = r.greensGiven ?? 0;
-        const reds   = document.createElement('td'); reds.className='pill';   reds.textContent   = r.redsGiven ?? 0;
+        const tdG = document.createElement('td');
+        tdG.innerHTML = `<span class="pill ${p.greensGiven===greensMax && greensMax>0 ? 'green' : (p.greensGiven===greensMin ? 'red' : '')}">${p.greensGiven||0}</span>`;
+        tr.appendChild(tdG);
 
-        tr.append(greens, reds);
+        const tdR = document.createElement('td');
+        tdR.innerHTML = `<span class="pill ${p.redsGiven===redsMin ? 'green' : (p.redsGiven===redsMax && redsMax>0 ? 'red' : '')}">${p.redsGiven||0}</span>`;
+        tr.appendChild(tdR);
+
         tbody.appendChild(tr);
       });
       table.appendChild(tbody);
       statsTableEl.appendChild(table);
     }
 
-    // ---------- Affinity & Joint Affinity ----------
-    function computeAffinity(){
-      const submitterSet = new Set();
-      songs.forEach(s=>{ const sub=norm(s.submitter); if(sub) submitterSet.add(sub); });
-      const submitters = [...submitterSet];
-
-      const matrix = {};
-      roster.forEach(v=>{ matrix[v] = {}; submitters.forEach(s=> matrix[v][s] = {sum:0,count:0}); });
-
-      songs.forEach(song=>{
-        const sub = norm(song.submitter);
-        if(!sub) return;
-        Object.entries(song.scores||{}).forEach(([voter, val])=>{
-          const num = Number(val);
-          if(Number.isFinite(num) && lc(voter) !== lc(sub)){
-            matrix[voter] ??= {};
-            matrix[voter][sub] ??= {sum:0,count:0};
-            matrix[voter][sub].sum += num;
-            matrix[voter][sub].count += 1;
-          }
-        });
+    /* ========== Affinity (A -> B) ========== */
+    function computeDirectionalAffinity(){
+      const bySubmitter = {};
+      songs.forEach((s, idx)=>{
+        const sub = norm(s.submitter);
+        if(!bySubmitter[sub]) bySubmitter[sub] = [];
+        bySubmitter[sub].push(idx);
       });
 
-      const rows = roster.map(voter=>{
-        const values = {};
-        submitters.forEach(sub=>{
-          const cell = matrix[voter]?.[sub];
-          values[sub] = (cell && cell.count) ? (cell.sum / cell.count) : NaN;
-        });
-        return { voter, values };
-      });
+      const A = {}; // A[voter][submitter] = avg score
+      roster.forEach(a=>{ A[a] = {}; });
 
-      const maxVal = Math.max(1, ...rows.flatMap(r=> submitters.map(s=> Number.isFinite(r.values[s]) ? r.values[s] : 0)));
-      return { submitters, rows, maxVal };
+      roster.forEach(voter=>{
+        roster.forEach(sub=>{
+          if(lc(voter)===lc(sub)) return;
+          const songIdxs = bySubmitter[sub] || [];
+          const vals = [];
+          songIdxs.forEach(si=>{
+            const val = Number(songs[si].scores?.[voter]);
+            if(Number.isFinite(val)) vals.push(val);
+          });
+          if(vals.length) A[voter][sub] = vals.reduce((x,y)=>x+y,0)/vals.length;
+        });
+      });
+      return A;
     }
 
     function renderAffinity(){
-      const { submitters, rows } = computeAffinity();
+      const A = computeDirectionalAffinity();
       affinityTableEl.innerHTML = '';
-
       const table = document.createElement('table');
       const thead = document.createElement('thead');
-      thead.innerHTML =
-        '<tr><th>Voter ↓ / Submitter →</th>' +
-        submitters.map(s => '<th>' + s + '</th>').join('') +
-        '</tr>';
-      table.appendChild(thead);
-
+      const hdr = document.createElement('tr');
+      hdr.innerHTML = `<th>Voter ↓ / Submitter →</th>` + roster.map(n=>`<th>${n}</th>`).join('');
+      thead.appendChild(hdr); table.appendChild(thead);
       const tbody = document.createElement('tbody');
-      rows.forEach(r => {
-        const tr = document.createElement('tr');
-        const head = document.createElement('td'); head.textContent = r.voter; tr.appendChild(head);
 
-        const rowVals = submitters.map(s => r.values[s]).filter(v => Number.isFinite(v));
+      roster.forEach(voter=>{
+        // compute row min/max (exclude self and undefined)
+        const rowVals = roster
+          .filter(sub=> lc(sub)!==lc(voter))
+          .map(sub => A[voter]?.[sub])
+          .filter(v => Number.isFinite(v));
         const rowMax = rowVals.length ? Math.max(...rowVals) : NaN;
         const rowMin = rowVals.length ? Math.min(...rowVals) : NaN;
 
-        submitters.forEach(sub => {
-          const val = r.values[sub];
+        const tr = document.createElement('tr');
+        const tdL = document.createElement('td');
+        tdL.style.display='flex'; tdL.style.alignItems='center'; tdL.style.gap='8px';
+        tdL.appendChild(personAvatarEl(voter));
+        const nm = document.createElement('span'); nm.textContent = voter; tdL.appendChild(nm);
+        tr.appendChild(tdL);
+
+        roster.forEach(sub=>{
           const td = document.createElement('td');
-          const span = document.createElement('span'); span.className = 'aff-num';
-          if(Number.isFinite(val)){
-            span.textContent = val.toFixed(2);
-            if(val === rowMax) span.classList.add('best');
-            if(val === rowMin) span.classList.add('worst');
-          } else {
-            span.textContent = '-';
+          if(lc(voter)===lc(sub)){ td.textContent = '—'; }
+          else{
+            const v = A[voter]?.[sub];
+            let cls = '';
+            if(Number.isFinite(v)){
+              if(v === rowMax) cls = 'best';
+              if(v === rowMin) cls = (rowMax!==rowMin ? 'worst' : '');
+              td.innerHTML = `<span class="aff-num ${cls}">${v.toFixed(2)}</span>`;
+            } else {
+              td.textContent = '—';
+            }
           }
-          td.appendChild(span);
           tr.appendChild(td);
         });
 
         tbody.appendChild(tr);
       });
-
       table.appendChild(tbody);
       affinityTableEl.appendChild(table);
     }
 
-    function computeJointAffinity(){
-      const { submitters, rows } = computeAffinity();
-      const look = new Map(rows.map(r => [r.voter, r.values]));
-      const pairs = [];
-      for(let i=0; i<submitters.length; i++){
-        for(let j=i+1; j<submitters.length; j++){
-          const A = submitters[i], B = submitters[j];
-          const aToB = look.get(A)?.[B];
-          const bToA = look.get(B)?.[A];
-          const aOK = Number.isFinite(aToB), bOK = Number.isFinite(bToA);
-          const joint = (aOK && bOK) ? (aToB + bToA)/2 : NaN;
-          pairs.push({ A, B, aToB, bToA, joint });
-        }
-      }
-      return pairs;
-    }
-
+    /* ========== Joint Affinity (LIST with A→B, B→A, Joint, Bar) ========== */
     function renderJointAffinity(){
-      const pairs = computeJointAffinity().filter(p => Number.isFinite(p.joint)).sort((a,b) => b.joint - a.joint);
+      const A = computeDirectionalAffinity();
 
-      jointAffinityTableEl.innerHTML = '';
-      const table = document.createElement('table');
-      const thead = document.createElement('thead');
-      thead.innerHTML = `
-        <tr>
-          <th>Rank</th>
-          <th>Pair</th>
-          <th title="Average A gave to B">A→B</th>
-          <th title="Average B gave to A">B→A</th>
-          <th title="(A→B + B→A)/2">Joint Avg</th>
-        </tr>`;
-      table.appendChild(thead);
-
-      const tbody = document.createElement('tbody');
-      pairs.forEach((p, idx) => {
-        const tr = document.createElement('tr');
-
-        const rank = document.createElement('td'); rank.innerHTML = `<span class="rank-badge">${idx+1}</span>`;
-
-        const pair = document.createElement('td');
-        const wrap = document.createElement('div');
-        wrap.style.display = 'grid'; wrap.style.gridTemplateColumns = '1fr auto 1fr'; wrap.style.alignItems = 'center'; wrap.style.columnGap = '10px';
-
-        const left = document.createElement('div'); left.style.display = 'flex'; left.style.alignItems = 'center'; left.style.justifyContent = 'center'; left.style.gap = '6px';
-        const aImg = personAvatarEl(p.A); aImg.style.width='22px'; aImg.style.height='22px';
-        const aName = document.createElement('span'); aName.textContent = p.A;
-        left.appendChild(aImg); left.appendChild(aName);
-
-        const sep = document.createElement('span'); sep.textContent = '↔'; sep.style.textAlign = 'center';
-
-        const right = document.createElement('div'); right.style.display = 'flex'; right.style.alignItems = 'center'; right.style.justifyContent = 'center'; right.style.gap = '6px';
-        const bName = document.createElement('span'); bName.textContent = p.B;
-        const bImg = personAvatarEl(p.B); bImg.style.width='22px'; bImg.style.height='22px'; bImg.style.marginLeft='2px';
-        right.appendChild(bName); right.appendChild(bImg);
-
-        wrap.appendChild(left); wrap.appendChild(sep); wrap.appendChild(right);
-        pair.appendChild(wrap);
-
-        const a2b = document.createElement('td'); a2b.className='pill'; a2b.textContent = Number.isFinite(p.aToB) ? p.aToB.toFixed(2) : '-';
-        const b2a = document.createElement('td'); b2a.className='pill'; b2a.textContent = Number.isFinite(p.bToA) ? p.bToA.toFixed(2) : '-';
-        const joint = document.createElement('td'); joint.className='pill'; joint.textContent = p.joint.toFixed(2);
-
-        tr.append(rank, pair, a2b, b2a, joint);
-        tbody.appendChild(tr);
-      });
-
-      table.appendChild(tbody);
-      jointAffinityTableEl.appendChild(table);
-    }
-
-    // ---------- Bulk import (scores) ----------
-    function autoDelimiter(sample){
-      if(delimiterEl.value !== 'auto') return delimiterEl.value;
-      const counts = [',','\t',';'].map(d=>({d, c:(sample.match(new RegExp(d==='\t'?'\\t':d,'g'))||[]).length})).sort((a,b)=>b.c-a.c);
-      return (counts[0]?.c>0)? counts[0].d : '\t';
-    }
-
-    function parseCSV(text, delim){
-      const out = []; let row = [], val = '', inQuotes = false;
-      for(let i=0;i<text.length;i++){
-        const ch = text[i];
-        if(inQuotes){
-          if(ch==='"' && text[i+1]==='"'){ val+='"'; i++; }
-          else if(ch==='"'){ inQuotes = false; }
-          else { val += ch; }
-          continue;
+      const pairs = [];
+      for(let i=0;i<roster.length;i++){
+        for(let j=i+1;j<roster.length;j++){
+          const p = roster[i], q = roster[j];
+          const ab = A[p]?.[q];
+          const ba = A[q]?.[p];
+          const both = [ab,ba].filter(v=>Number.isFinite(v));
+          if(both.length){
+            const joint = both.reduce((x,y)=>x+y,0)/both.length;
+            pairs.push({ a:p, b:q, ab, ba, joint });
+          }
         }
-        if(ch==='"'){ inQuotes = true; continue; }
-        if(ch==='\n'){ row.push(val); out.push(row); row=[]; val=''; continue; }
-        if(ch==='\r'){ continue; }
-        if(ch===delim){ row.push(val); val=''; continue; }
-        val += ch;
       }
-      row.push(val); out.push(row);
-      if(out.length && out[out.length-1].every(c=>c==='')) out.pop();
-      return out;
-    }
+      pairs.sort((x,y)=> y.joint - x.joint);
 
-    function headersToMap(headers){ const map = {}; headers.forEach((h,idx)=>{ map[lc(h)] = idx; }); return map; }
+      jointAffinityListEl.innerHTML = '';
+      const maxVal = 10;
+		// Header row
+		const header = document.createElement('div');
+		header.className = 'pair-row pair-header';
+		const hA = document.createElement('div'); hA.className = 'pair-left';  hA.innerHTML  = '<span>Person A</span>';
+		const hArrow = document.createElement('div'); hArrow.className = 'pair-arrow'; hArrow.textContent = '↔';
+		const hB = document.createElement('div'); hB.className = 'pair-right'; hB.innerHTML = '<span>Person B</span>';
+		const hAB = document.createElement('div'); hAB.className = 'pair-num'; hAB.textContent = 'A→B';
+		const hBA = document.createElement('div'); hBA.className = 'pair-num'; hBA.textContent = 'B→A';
+		const hJ  = document.createElement('div'); hJ.className  = 'pair-num'; hJ.textContent  = 'Joint';
+		const hBar= document.createElement('div'); hBar.className = 'pair-bar-label'; hBar.textContent = 'Score';
+		header.append(hA, hArrow, hB, hAB, hBA, hJ, hBar);
+		jointAffinityListEl.appendChild(header);
 
-    function matchRosterHeader(h){
-      const key = lc(h);
-      let exact = roster.find(r => lc(r) === key);
-      if(exact) return exact;
-      const relax = key.replace(/[^a-z0-9]/g,'');
-      exact = roster.find(r => lc(r).replace(/[^a-z0-9]/g,'') === relax);
-      return exact || null;
-    }
 
-    function importRows(rows, hasHeader){
-      if(!rows.length) return 0;
-      let headers = [], dataRows = rows;
 
-      if(hasHeader){ headers = rows[0]; dataRows = rows.slice(1); }
-      else { headers = ['submitter','song','artist', ...roster]; }
+      pairs.forEach(({a,b,ab,ba,joint})=>{
+        const rowEl = document.createElement('div');
+        rowEl.className = 'pair-row';
 
-      const hmap = headersToMap(headers);
-      const titleIdx = hmap['song'] ?? hmap['title'] ?? 0;
-      const artistIdx = hmap['artist'] ?? 1;
-      const submitterIdx = hmap['submitter'] ?? hmap['nominator'] ?? 2;
-      const animeIdx = hmap['anime'];
-      const gameIdx = hmap['game'];
-      const averageIdx = hmap['average'];
+        const left = document.createElement('div'); left.className='pair-left';
+        left.appendChild(personAvatarEl(a));
+        left.appendChild(Object.assign(document.createElement('span'), {textContent:a}));
 
-      const scoreCols = []; const newScorers = [];
-      headers.forEach((h,idx)=>{
-        if(idx===titleIdx || idx===artistIdx || idx===submitterIdx || idx===averageIdx || idx===animeIdx || idx===gameIdx) return;
-        const headerName = norm(h);
-        if(!headerName || RESERVED_HEADERS.has(lc(headerName))) return;
-        const who = matchRosterHeader(headerName);
-        if(who){ scoreCols.push({idx, who}); }
-        else { newScorers.push(headerName); scoreCols.push({idx, who: headerName}); }
+        const arrow = document.createElement('div'); arrow.className='pair-arrow'; arrow.textContent = '↔';
+
+		const right = document.createElement('div'); right.className='pair-right';
+		const rightName = document.createElement('span');
+		rightName.textContent = b;
+		right.appendChild(rightName);
+		right.appendChild(personAvatarEl(b)); // avatar to the right of the name
+
+
+        const cAB = document.createElement('div'); cAB.className='pair-num'; cAB.textContent = Number.isFinite(ab) ? ab.toFixed(2) : '—';
+        const cBA = document.createElement('div'); cBA.className='pair-num'; cBA.textContent = Number.isFinite(ba) ? ba.toFixed(2) : '—';
+        const cJ  = document.createElement('div'); cJ.className='pair-num';  cJ.textContent  = Number.isFinite(joint) ? joint.toFixed(2) : '—';
+
+        const wrap = document.createElement('div'); wrap.className = 'chart-bar-wrap';
+        const bar = document.createElement('div'); bar.className = 'chart-bar'; bar.style.background = chartGradient(jointColor);
+        const ratio = Math.max(0, Math.min(1, (Number.isFinite(joint) ? joint : 0) / maxVal));
+        bar.style.width = (ratio * 100) + '%';
+        const val = document.createElement('div'); val.className = 'chart-val'; val.textContent = Number.isFinite(joint) ? joint.toFixed(2) : '—';
+        wrap.appendChild(bar); wrap.appendChild(val);
+
+        rowEl.appendChild(left);
+        rowEl.appendChild(arrow);
+        rowEl.appendChild(right);
+        rowEl.appendChild(cAB);
+        rowEl.appendChild(cBA);
+        rowEl.appendChild(cJ);
+        rowEl.appendChild(wrap);
+
+        jointAffinityListEl.appendChild(rowEl);
       });
 
-      if(newScorers.length){
-        newScorers.forEach(n=>{ if(!roster.includes(n)) roster.push(n); });
-        peopleCountEl.value = roster.length;
-        renderRosterInputs(); rebuildScoreInputs(); fillDatalist();
+      if(pairs.length===0){
+        const msg = document.createElement('div');
+        msg.className='hints';
+        msg.textContent = 'No joint affinity yet — add some songs and scores.';
+        jointAffinityListEl.appendChild(msg);
       }
+    }
 
-      let added = 0;
-      dataRows.forEach(r=>{
-        const title = norm(r[titleIdx]); const artist = norm(r[artistIdx]); const submitter = norm(r[submitterIdx]);
-        if(!title) return;
-        const scores = {}; const favorites = {};
-        scoreCols.forEach(sc=>{
-          const raw = norm(r[sc.idx]);
-          if(raw==='' || isBlankScore(raw)) return;
-          const { num, favorite } = parseScoreCell(raw);
-          if(Number.isFinite(num)) { scores[sc.who] = num; if(favorite) favorites[sc.who] = true; }
-        });
+    /* ========== CSV/TSV utils ========== */
+    function autoDelimiterGeneric(text){
+      const counts = { ',':0, '\t':0, ';':0 };
+      const lines = text.split(/\r?\n/).slice(0,5);
+      lines.forEach(line=>{
+        counts[','] += (line.match(/,/g)||[]).length;
+        counts['\t'] += (line.match(/\t/g)||[]).length;
+        counts[';'] += (line.match(/;/g)||[]).length;
+      });
+      let best = ','; let maxc = counts[','];
+      if(counts['\t']>maxc){ best='\t'; maxc=counts['\t']; }
+      if(counts[';']>maxc){ best=';'; maxc=counts[';']; }
+      return best;
+    }
+    function parseDelimited(text, delim){
+      const rows = [];
+      let i=0, cur='', inQuotes=false;
+      function pushCell(){ cur = cur.replace(/^\s+|\s+$/g,''); cells.push(cur); cur=''; }
+      let cells=[];
+      while(i<=text.length){
+        const ch = text[i] || '\n';
+        if(ch==='"'){ if(inQuotes && text[i+1]==='"'){ cur+='"'; i++; } else { inQuotes=!inQuotes; } }
+        else if(!inQuotes && (ch===delim || ch==='\n' || ch==='\r')){
+          pushCell();
+          if(ch===delim){ i++; continue; }
+          if(ch==='\r' && text[i+1]==='\n') i++;
+          rows.push(cells); cells=[];
+        } else { cur+=ch; }
+        i++;
+      }
+      if(cells.length) rows.push(cells);
+      return rows.filter(r=>r.length && r.some(c=>norm(c).length));
+    }
 
-        let avg = computeAverage(scores);
-        if(averageIdx!==undefined){
-          const rawAvg = parseFloat(r[averageIdx]); if(Number.isFinite(rawAvg)) avg = rawAvg;
+    function ensureRosterFromHeaders(headers){
+      headers.forEach(h=>{
+        const key = lc(h);
+        if(!RESERVED_HEADERS.has(key)){
+          const exists = roster.some(n=> lc(n)===key );
+          if(!exists){ roster.push(h); peopleCountEl.value = roster.length; }
         }
-
-        const flags = { anime:false, game:false, anonymous:false };
-        let sourceText = '';
-        if(animeIdx !== undefined && norm(r[animeIdx])){ flags.anime = true; sourceText = norm(r[animeIdx]); }
-        if(gameIdx  !== undefined && norm(r[gameIdx])){ flags.game  = true; sourceText = norm(r[gameIdx]); }
-
-        addSong({ id: uid(), title, artist, submitter, scores, favorites, avg, flags, sourceText, guesses:{} });
-        added++;
       });
-      return added;
+      renderRosterInputs(); fillDatalist();
     }
 
-    openBulkBtn.addEventListener('click', ()=>{
-      bulkText.value = ''; hasHeaderEl.value = 'yes'; delimiterEl.value = 'auto'; bulkDialog.showModal();
-    });
+    /* ========== Bulk Scores Import ========== */
+    openBulkBtn.addEventListener('click', ()=>{ bulkDialog.showModal(); });
     cancelBulkBtn.addEventListener('click', ()=> bulkDialog.close());
+
     bulkForm.addEventListener('submit', (e)=>{
       e.preventDefault();
-      const text = bulkText.value.trim();
-      if(!text){ bulkDialog.close(); return; }
-      const delim = autoDelimiter(text);
-      const rows = parseCSV(text.replace(/\r\n?/g,'\n'), delim);
-      const added = importRows(rows, hasHeaderEl.value==='yes');
-      bulkDialog.close();
-      if(added===0) alert('No rows imported. Check headers: Submitter/Nominator, Song, Artist, optional Anime/Game/Average, and columns named after roster members. Add * after a score to mark a favorite.');
-    });
+      const text = bulkText.value || '';
+      if(!text.trim()){ bulkDialog.close(); return; }
+      const delim = (delimiterEl.value==='auto') ? autoDelimiterGeneric(text) : delimiterEl.value;
+      const rows = parseDelimited(text, delim);
+      if(!rows.length){ bulkDialog.close(); return; }
 
-    // ---------- Bulk import (guesses) ----------
-    function autoDelimiterGuess(sample){
-      if(guessDelimiterEl.value !== 'auto') return guessDelimiterEl.value;
-      const counts = [',','\t',';'].map(d=>({d, c:(sample.match(new RegExp(d==='\t'?'\\t':d,'g'))||[]).length})).sort((a,b)=>b.c-a.c);
-      return (counts[0]?.c>0)? counts[0].d : '\t';
-    }
+      let headers = [];
+      if(hasHeaderEl.value==='yes'){ headers = rows.shift().map(h=>norm(h)); }
+      else{
+        headers = rows[0].map((_,i)=> `col${i+1}`);
+      }
 
-    function importGuesses(rows, hasHeader){
-      if(!rows.length) return 0;
-      let headers = [], dataRows = rows;
-      if(hasHeader){ headers = rows[0]; dataRows = rows.slice(1); }
-      else { headers = ['submitter','song','artist', ...roster]; }
-
-      const hmap = headersToMap(headers);
-      const titleIdx = hmap['song'] ?? hmap['title'] ?? 1;
-      const artistIdx = hmap['artist'] ?? 2;
-      const submitterIdx = hmap['submitter'] ?? hmap['nominator'] ?? 0;
-
-      // Guess columns are the rest (match roster loosely)
-      const guessCols = [];
-      headers.forEach((h, idx)=>{
-        if(idx===titleIdx || idx===artistIdx || idx===submitterIdx) return;
-        const who = matchRosterHeader(h);
-        if(who) guessCols.push({ idx, who });
+      // Normalize header aliases
+      const idx = {};
+      headers.forEach((h,i)=>{
+        const k = lc(h);
+        if(['song','title'].includes(k)) idx.song = i;
+        else if(k==='artist') idx.artist = i;
+        else if(['submitter','nominator'].includes(k)) idx.submitter = i;
+        else if(k==='average') idx.average = i;
+        else if(k==='anime') idx.anime = i;
+        else if(k==='game') idx.game = i;
       });
 
-      let attached = 0;
-      dataRows.forEach(r=>{
-        const title = norm(r[titleIdx]);
-        const artist = norm(r[artistIdx]);
-        const submitter = norm(r[submitterIdx]);
-        if(!title) return;
+      // Add unknown people columns to roster
+      const personHeaders = headers.filter(h=> !['song','title','artist','submitter','nominator','average','anime','game'].includes(lc(h)) );
+      ensureRosterFromHeaders(personHeaders);
 
-        // Find matching song
-        let song = songs.find(s => lc(s.title)===lc(title) && lc(s.artist)===lc(artist));
-        if(!song){
-          // fallback: match by title + submitter if artist missing
-          song = songs.find(s => lc(s.title)===lc(title) && lc(s.submitter)===lc(submitter));
-        }
-        if(!song) return;
+      rows.forEach(cells=>{
+        const title = norm(cells[idx.song] ?? '');
+        const artist = norm(cells[idx.artist] ?? '');
+        const submitter = norm(cells[idx.submitter] ?? '');
+        const avgOverride = parseFloat(cells[idx.average] ?? '');
 
-        song.flags ||= {};
-        song.flags.anonymous = true;
-        song.guesses ||= {};
-        guessCols.forEach(gc=>{
-          const raw = norm(r[gc.idx]);
-          if(!raw || isBlankScore(raw)) return;
-          song.guesses[gc.who] = raw;
+        const scores = {};
+        const favorites = {};
+        const guesses = {};
+        const flags = { anime:false, game:false, anonymous: activeFlags().anonymous };
+
+        const sourceText = (()=>{
+          const a = norm(cells[idx.anime] ?? '');
+          const g = norm(cells[idx.game] ?? '');
+          if(a){ flags.anime = true; return a; }
+          if(g){ flags.game = true; return g; }
+          return norm(sourceInputEl.value);
+        })();
+
+        // person columns
+        headers.forEach((h, colIdx)=>{
+          const key = lc(h);
+          if(RESERVED_HEADERS.has(key)) return;
+          const who = roster.find(n=> lc(n)===key ) || h;
+          const cell = cells[colIdx];
+          if(isBlankScore(cell)) return;
+          const { num, favorite } = parseScoreCell(cell);
+          if(Number.isFinite(num) && lc(who)!==lc(submitter)){ scores[who] = num; }
+          if(favorite && lc(who)!==lc(submitter)){ favorites[who] = true; }
         });
-        attached++;
-      });
-      return attached;
-    }
 
-    openBulkGuessesBtn.addEventListener('click', ()=>{
-      bulkGuessText.value = ''; guessHasHeaderEl.value = 'yes'; guessDelimiterEl.value = 'auto'; bulkGuessDialog.showModal();
+        const avg = Number.isFinite(avgOverride) ? avgOverride : computeAverage(scores);
+        const song = {
+          id: uid(), title, artist, submitter,
+          avg, scores, favorites, sourceText,
+          guesses: flags.anonymous ? guesses : {},
+          flags
+        };
+        addSong(song);
+      });
+
+      bulkDialog.close();
+      rebuildScoreInputs();
     });
+
+    /* ========== Bulk Guesses Import ========== */
+    openBulkGuessesBtn.addEventListener('click', ()=> bulkGuessDialog.showModal());
     cancelBulkGuessBtn.addEventListener('click', ()=> bulkGuessDialog.close());
+
     bulkGuessForm.addEventListener('submit', (e)=>{
       e.preventDefault();
-      const text = bulkGuessText.value.trim();
-      if(!text){ bulkGuessDialog.close(); return; }
-      const delim = autoDelimiterGuess(text);
-      const rows = parseCSV(text.replace(/\r\n?/g,'\n'), delim);
-      const attached = importGuesses(rows, guessHasHeaderEl.value==='yes');
+      const text = bulkGuessText.value || '';
+      if(!text.trim()){ bulkGuessDialog.close(); return; }
+      const delim = (guessDelimiterEl.value==='auto') ? autoDelimiterGeneric(text) : guessDelimiterEl.value;
+      const rows = parseDelimited(text, delim);
+      if(!rows.length){ bulkGuessDialog.close(); return; }
+
+      let headers = [];
+      if(guessHasHeaderEl.value==='yes'){ headers = rows.shift().map(h=>norm(h)); }
+      else{ headers = rows[0].map((_,i)=> `col${i+1}`); }
+
+      // Identify basic columns
+      let idxSong=-1, idxArtist=-1, idxSubmitter=-1;
+      headers.forEach((h,i)=>{
+        const k = lc(h);
+        if(['song','title'].includes(k)) idxSong = i;
+        else if(k==='artist') idxArtist = i;
+        else if(['submitter','nominator'].includes(k)) idxSubmitter = i;
+      });
+
+      // Add unknown people columns to roster
+      const personHeaders = headers.filter(h=> !['song','title','artist','submitter','nominator'].includes(lc(h)) );
+      ensureRosterFromHeaders(personHeaders);
+
+      rows.forEach(cells=>{
+        const songTitle = norm(cells[idxSong] ?? '');
+        const artist = norm(cells[idxArtist] ?? '');
+        const submitter = norm(cells[idxSubmitter] ?? '');
+
+        // find matching song
+        const song = songs.find(s =>
+          lc(s.title)===lc(songTitle) &&
+          (!artist || lc(s.artist)===lc(artist)) &&
+          (!submitter || lc(s.submitter)===lc(submitter))
+        );
+        if(!song) return;
+
+        if(!song.flags) song.flags = {};
+        song.flags.anonymous = true;
+        if(!song.guesses) song.guesses = {};
+
+        headers.forEach((h, colIdx)=>{
+          const key = lc(h);
+          if(['song','title','artist','submitter','nominator'].includes(key)) return;
+          const who = roster.find(n=> lc(n)===key ) || h;
+          const guess = norm(cells[colIdx] ?? '');
+          if(!isBlankScore(guess)) song.guesses[who] = guess;
+        });
+      });
+
       bulkGuessDialog.close();
-      if(attached===0) alert('No guesses imported. We match by Song+Artist (fallback Song+Submitter). Ensure headers include Nominator/Submitter, Song, Artist, and columns named for roster members.');
-      refreshAllCards(); renderPeopleStats();
+      refreshAllCards(); renderPeopleChart(); renderPeopleStatsTable();
     });
 
-    // ---------- Snapshot (save .html) ----------
-    function buildSnapshotHTML(){
-      const snapshot = {
-        roster, photos, songs,
-        layout: layoutStyleEl.value,
-        sortBy: sortByEl.value,
-        commentCounts,
-        flags: activeFlags(),
-        guessDisplayMode
-      };
-      const injector =
-`<script id="snapshot-applier">
-  (function(){
-    try{
-      var snap = ${JSON.stringify(snapshot)};
-      window.addEventListener('DOMContentLoaded', function(){
-        try { roster = snap.roster || []; } catch(e){}
-        try { photos = snap.photos || {}; } catch(e){}
-        try { songs = snap.songs || []; } catch(e){}
-        try { commentCounts = snap.commentCounts || {}; } catch(e){}
-        try {
-          var menu = document.getElementById('modeMenu');
-          (['anime','game','anonymous']).forEach(function(f){
-            var btn = menu.querySelector('[data-flag="'+f+'"]');
-            if(btn && snap.flags && snap.flags[f]) btn.classList.add('active');
-          });
-        } catch(e){}
-        try { document.getElementById('layoutStyle').value = snap.layout || 'standard'; } catch(e){}
-        try { document.getElementById('sortBy').value = snap.sortBy || 'avg_desc'; } catch(e){}
-        try {
-          var gd = document.getElementById('guessDisplay');
-          if(gd && snap.guessDisplayMode){ gd.value = snap.guessDisplayMode; }
-        } catch(e){}
-        try { document.getElementById('peopleCount').value = roster.length; } catch(e){}
-        try { renderRosterInputs(); updateSourceFieldVisibility(); rebuildScoreInputs(); fillDatalist(); rerenderCards(); renderPeopleStats(); renderAffinity(); renderJointAffinity(); } catch(e){}
-      });
-    }catch(err){ console.error('Snapshot load failed', err); }
-  })();
-<\/script>`;
-      const html = document.documentElement.outerHTML.replace('</body>', injector + '\n</body>');
-      return html;
-    }
-
-    function downloadSnapshot(){
-      const html = buildSnapshotHTML();
-      const blob = new Blob([html], {type: 'text/html'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'song-scoring-dashboard.html';
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    }
-    downloadPageBtn.addEventListener('click', downloadSnapshot);
-
-    // ---------- Comments editor ----------
-    function renderCommentsEditor(){
-      ensureCommentKeys();
+    /* ========== Comments editor ========== */
+    openCommentsBtn?.addEventListener('click', ()=>{
       commentsListEl.innerHTML = '';
       roster.forEach(name=>{
-        const label = document.createElement('div');
-        label.style.display='flex'; label.style.alignItems='center'; label.style.gap='8px';
-        const img = personAvatarEl(name); img.style.width='22px'; img.style.height='22px';
-        const span = document.createElement('span'); span.textContent = name;
-        label.appendChild(img); label.appendChild(span);
-
-        const input = document.createElement('input');
-        input.type = 'number'; input.min = '0'; input.step = '1';
-        input.value = Number.isFinite(commentCounts[name]) ? commentCounts[name] : 0;
-        input.dataset.person = name;
-
+        const label = document.createElement('div'); label.textContent = name;
+        const inp = document.createElement('input'); inp.type='number'; inp.step='1';
+        inp.value = String(commentCounts[name] || 0);
+        inp.dataset.person = name;
         commentsListEl.appendChild(label);
-        commentsListEl.appendChild(input);
+        commentsListEl.appendChild(inp);
       });
-    }
-    openCommentsBtn?.addEventListener('click', ()=>{ renderCommentsEditor(); commentsDialog.showModal(); });
-    document.getElementById('cancelComments')?.addEventListener('click', ()=> commentsDialog.close());
-    commentsForm?.addEventListener('submit', (e)=>{
+      commentsDialog.showModal();
+    });
+    commentsForm.addEventListener('submit', (e)=>{
       e.preventDefault();
-      [...commentsListEl.querySelectorAll('input[type="number"]')].forEach(inp=>{
-        const who = inp.dataset.person;
-        const val = parseInt(inp.value, 10);
-        commentCounts[who] = Number.isFinite(val) && val >= 0 ? val : 0;
+      commentsListEl.querySelectorAll('input[type="number"]').forEach(inp=>{
+        const who = inp.dataset.person; const v = parseInt(inp.value || '0', 10);
+        commentCounts[who] = Number.isFinite(v) ? v : 0;
       });
       commentsDialog.close();
-      renderPeopleStats();
+      renderPeopleChart(); renderPeopleStatsTable();
     });
+    document.getElementById('cancelComments')?.addEventListener('click', ()=> commentsDialog.close());
 
-    // ---------- Init ----------
-    renderRosterInputs();
-    updateSourceFieldVisibility();
-    rebuildScoreInputs();
-    fillDatalist();
-    sortByEl.value = 'avg_desc';
 
-    const observer = new MutationObserver(() => { renderPeopleStats(); renderAffinity(); renderJointAffinity(); });
-    observer.observe(cardsEl, {childList:true, subtree:true});
-
-    renderPeopleStats(); renderAffinity(); renderJointAffinity();
+    /* ========== Init ========== */
+    function shrinkInit(){
+      document.querySelectorAll('.title, .artist, .source, .hero .rank, .hero .avgnum').forEach(el=>{ shrinkToFit(el); resizeObserver.observe(el); });
+    }
+    function init(){
+      renderRosterInputs(); fillDatalist(); rebuildScoreInputs();
+      renderPeopleChart(); renderPeopleStatsTable(); renderAffinity(); renderJointAffinity();
+      shrinkInit();
+    }
+    init();
   </script>
 </body>
 </html>
-
-     
